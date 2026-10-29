@@ -6,6 +6,7 @@ import { supabase } from './supabaseClient.js';
 document.addEventListener('DOMContentLoaded', () => {
   verifySession();
   loadUserInfo();
+  checkMobileForPasskeyButton();
 });
 
 /**
@@ -13,7 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function verifySession() {
   const isAuth = localStorage.getItem('netcontrol_auth');
-  if (!isAuth || !isAuth === 'true') {
+  // Nota: corregido el operador lógico estricto para evitar errores de validación de booleanos
+  if (!isAuth || isAuth !== 'true') {
     window.location.href = '../index.html';
   }
 }
@@ -26,6 +28,24 @@ function loadUserInfo() {
   if (userEmail) {
     const emailElements = document.querySelectorAll('.user-email-text');
     emailElements.forEach(el => el.textContent = userEmail);
+  }
+}
+
+/**
+ * Comprueba si el dispositivo es móvil/tablet y muestra u oculta el botón de vincular huella
+ */
+function checkMobileForPasskeyButton() {
+  const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                         (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform));
+
+  const btnHuella = document.getElementById('btn-vincular-huella');
+  
+  if (btnHuella) {
+    if (isMobileDevice) {
+      btnHuella.style.display = 'inline-flex';
+    } else {
+      btnHuella.style.display = 'none';
+    }
   }
 }
 
