@@ -10,9 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFormSubmit();
 });
 
-/**
- * Verifica sesión activa
- */
 function verifySession() {
   const isAuth = localStorage.getItem('netcontrol_auth');
   if (!isAuth || isAuth !== 'true') {
@@ -20,9 +17,6 @@ function verifySession() {
   }
 }
 
-/**
- * Carga el correo del usuario en el header
- */
 function loadUserInfo() {
   const userEmail = localStorage.getItem('netcontrol_user');
   if (userEmail) {
@@ -32,9 +26,6 @@ function loadUserInfo() {
   }
 }
 
-/**
- * Controla la visibilidad condicional de campos (SSID para WiFi e IP para estáticas)
- */
 function setupDynamicFields() {
   const tipoConexionSelect = document.getElementById('tipo_conexion');
   const contenedorSsid = document.getElementById('contenedor-ssid');
@@ -62,9 +53,6 @@ function setupDynamicFields() {
   });
 }
 
-/**
- * Gestiona el envío del formulario hacia la Edge Function
- */
 function setupFormSubmit() {
   const form = document.getElementById('form-alta');
 
@@ -75,7 +63,6 @@ function setupFormSubmit() {
     btnGuardar.disabled = true;
     btnGuardar.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Guardando...`;
 
-    // Recoger valores del formulario
     const payload = {
       planta: document.getElementById('planta').value,
       estancia: document.getElementById('estancia').value,
@@ -91,7 +78,9 @@ function setupFormSubmit() {
       puerto_dock_ext: document.getElementById('puerto_dock_ext').value || null,
       dock_network: document.getElementById('dock_network').value.trim() || null,
       servicio: document.getElementById('servicio').value,
-      tipo_servicio: document.getElementById('tipo_servicio').value
+      tipo_servicio: document.getElementById('tipo_servicio').value,
+      software: document.getElementById('software').value,
+      comentarios: document.getElementById('comentarios').value.trim() || null
     };
 
     try {
