@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetControl | Acceso Seguro</title>
+  
+  <!-- Tailwind CSS & Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Supabase JS Client (Preparado para siguientes fases) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    .bg-network {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.90) 100%),
+                  url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?q=80&w=2000&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen bg-network antialiased flex items-center justify-center p-4">
+
+  <!-- ==================== PANTALLA DE ACCESO SEGURO ==================== -->
+  <div class="glass-card w-full max-w-md p-8 rounded-2xl shadow-2xl relative overflow-hidden">
+    
+    <!-- Cabecera / Logotipo -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600/20 text-blue-400 mb-4 border border-blue-500/30 shadow-inner">
+        <i class="fa-solid fa-network-wired text-3xl"></i>
+      </div>
+      <h1 class="text-3xl font-bold tracking-tight text-white">NetControl</h1>
+      <p class="text-slate-400 text-xs mt-1 uppercase tracking-wider font-semibold">Acceso Seguro a Infraestructura IP</p>
+    </div>
+
+    <!-- Formulario de Credenciales -->
+    <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Usuario</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+            <i class="fa-solid fa-user"></i>
+          </span>
+          <input type="text" id="username" required placeholder="admin@redlocal.lan" 
+            class="w-full pl-10 pr-4 py-3 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-sm">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Contraseña</label>
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+            <i class="fa-solid fa-lock"></i>
+          </span>
+          <input type="password" id="password" required placeholder="••••••••" 
+            class="w-full pl-10 pr-4 py-3 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-sm">
+        </div>
+      </div>
+
+      <button type="submit" 
+        class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg shadow-lg shadow-blue-600/30 transition transform active:scale-95 flex items-center justify-center gap-2 text-sm">
+        <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+      </button>
+    </form>
+
+    <!-- Separador -->
+    <div class="relative my-6 text-center">
+      <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-700/60"></div></div>
+      <span class="relative px-3 bg-slate-800/80 text-[11px] text-slate-400 uppercase tracking-wider rounded-full">o autenticación biométrica</span>
+    </div>
+
+    <!-- Botón Passkey / Huella -->
+    <button onclick="handlePasskeyLogin()" 
+      class="w-full py-3 px-4 bg-slate-800/90 hover:bg-slate-700/90 border border-slate-600/60 text-slate-200 font-medium rounded-lg transition flex items-center justify-center gap-3 shadow-md group text-sm">
+      <i class="fa-solid fa-fingerprint text-xl text-emerald-400 group-hover:scale-110 transition-transform"></i>
+      <div class="text-left">
+        <div class="leading-tight font-semibold">Autenticación Biométrica</div>
+        <div class="text-[10px] text-slate-400">Validar con Huella / Passkey</div>
+      </div>
+    </button>
+
+    <!-- Pie de página informativo -->
+    <div class="mt-8 text-center border-t border-slate-800/80 pt-4 flex justify-between items-center text-[11px] text-slate-500">
+      <span>GitHub Pages + Supabase</span>
+      <span class="text-emerald-400 flex items-center gap-1 font-mono">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Seguro
+      </span>
+    </div>
+
+  </div>
+
+  <!-- Script de manejo inicial -->
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('username').value;
+      // En las siguientes fases, aquí enlazaremos la validación contra Supabase
+      alert(`Acceso solicitado para: ${user}. En la siguiente fase conectaremos el panel de gestión de red.`);
+    }
+
+    async function handlePasskeyLogin() {
+      if (!window.PublicKeyCredential) {
+        alert('Este navegador no soporta autenticación biométrica / Passkeys.');
+        return;
+      }
+      try {
+        // Simulación de desafío WebAuthn para siguientes fases
+        alert('Iniciando protocolo WebAuthn (Passkey / Huella dactilar)...');
+      } catch (err) {
+        console.error(err);
+        alert('Error en la autenticación biométrica.');
+      }
+    }
+  </script>
+</body>
+</html>
