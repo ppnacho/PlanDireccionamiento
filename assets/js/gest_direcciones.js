@@ -62,7 +62,7 @@ window.handleLogout = function() {
  * Función para abrir el modal o formulario de alta de dispositivos
  */
 window.openModalAlta = function() {
-  alert('Abriendo formulario de Alta de Dispositivo...');
+  window.location.href = 'alta.html';
 };
 
 /**
