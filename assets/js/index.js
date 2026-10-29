@@ -1,6 +1,7 @@
 /**
  * NetControl - Lógica de Autenticación de Portada
  */
+import { supabase } from './supabaseClient.js';
 
 function handleLogin(e) {
   e.preventDefault();
