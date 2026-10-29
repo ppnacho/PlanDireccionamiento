@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetControl - Alta de Dispositivo</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome para iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
+
+  <!-- Header -->
+  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center shadow-md">
+    <div class="flex items-center gap-3">
+      <a href="gest_direcciones.html" class="text-slate-400 hover:text-white transition">
+        <i class="fa-solid fa-arrow-left text-lg"></i>
+      </a>
+      <h1 class="text-lg font-bold tracking-wide text-emerald-400"><i class="fa-solid fa-network-wired mr-2"></i>NetControl / Alta</h1>
+    </div>
+    <span class="text-xs text-slate-400 user-email-text">Cargando...</span>
+  </header>
+
+  <!-- Formulario Principal -->
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-xl backdrop-blur-sm">
+      <h2 class="text-xl font-semibold mb-6 text-white border-b border-slate-700 pb-3">Nuevo Dispositivo de Red</h2>
+
+      <form id="form-alta" class="space-y-6">
+
+        <!-- Fila 1: Planta y Estancia -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Planta *</label>
+            <select id="planta" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+              <option value="">Selecciona planta...</option>
+              <option value="BAJA">BAJA</option>
+              <option value="PRIMERA">PRIMERA</option>
+              <option value="BUHARDILLA">BUHARDILLA</option>
+              <option value="ESCALERAS">ESCALERAS</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Estancia *</label>
+            <select id="estancia" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+              <option value="">Selecciona estancia...</option>
+              <option value="Cocina">Cocina</option>
+              <option value="Aseo">Aseo</option>
+              <option value="Salon">Salon</option>
+              <option value="Hall">Hall</option>
+              <option value="Jardin">Jardin</option>
+              <option value="Entrada">Entrada</option>
+              <option value="Garaje">Garaje</option>
+              <option value="Tendedero">Tendedero</option>
+              <option value="HabPpal">HabPpal</option>
+              <option value="BañoPpal">BañoPpal</option>
+              <option value="HabDoble">HabDoble</option>
+              <option value="Baño">Baño</option>
+              <option value="HabIndividual">HabIndividual</option>
+              <option value="Buhardilla">Buhardilla</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fila 2: Conexión y SSID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Tipo de Conexión *</label>
+            <select id="tipo_conexion" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+              <option value="ETH">ETH (Ethernet)</option>
+              <option value="WIFI">WIFI</option>
+            </select>
+          </div>
+
+          <div id="contenedor-ssid" class="hidden">
+            <label class="block text-sm font-medium text-slate-300 mb-2">SSID (Red WiFi)</label>
+            <input type="text" id="ssid" placeholder="Ej: MiRedWiFi" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <!-- Fila 3: Hardware y MAC -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">ID Hardware *</label>
+            <input type="text" id="id_hw" required placeholder="Ej: ESP32-Relay-01" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Dirección MAC *</label>
+            <input type="text" id="mac" required placeholder="Ej: AA:BB:CC:DD:EE:FF" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <!-- Fila 4: Tipo IP e IP -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Tipo de IP *</label>
+            <select id="tipo_ip" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+              <option value="DHCP">DHCP (Dinámica)</option>
+              <option value="estatica">Estática</option>
+              <option value="DHCP estatica">DHCP Estática (Reserva)</option>
+            </select>
+          </div>
+
+          <div id="contenedor-ip" class="hidden">
+            <label class="block text-sm font-medium text-slate-300 mb-2">Dirección IP *</label>
+            <input type="text" id="ip" placeholder="Ej: 192.168.1.50" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <!-- Fila 5: Puertos -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Puerto Rout. Ext</label>
+            <input type="number" id="puerto_rout_ext" placeholder="Ej: 8080" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Puerto Rout. Int</label>
+            <input type="number" id="puerto_rout_int" placeholder="Ej: 80" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Puerto Dock. Int</label>
+            <input type="number" id="puerto_dock_int" placeholder="Ej: 3000" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Puerto Dock. Ext</label>
+            <input type="number" id="puerto_dock_ext" placeholder="Ej: 3000" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500 text-sm">
+          </div>
+        </div>
+
+        <!-- Fila 6: Red Docker -->
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Red Docker (Dock Network)</label>
+          <input type="text" id="dock_network" placeholder="Ej: bridge / macvlan" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <!-- Fila 7: Servicios y Tipo de Servicios (Arrays separados por comas) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Servicios (separados por comas)</label>
+            <input type="text" id="servicio" placeholder="Ej: Home Assistant, MQTT, Zigbee" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Tipo de Servicios (separados por comas)</label>
+            <input type="text" id="tipo_servicio" placeholder="Ej: Domótica, Broker" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex justify-end gap-4 pt-4 border-t border-slate-700">
+          <a href="gest_direcciones.html" class="px-5 py-2.5 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 transition font-medium">Cancelar</a>
+          <button type="submit" id="btn-guardar" class="px-6 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar Dispositivo
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </main>
+
+  <!-- Script principal del formulario -->
+  <script type="module" src="../assets/js/alta.js"></script>
+</body>
+</html>
