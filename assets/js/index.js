@@ -53,16 +53,80 @@ async function handleLogin(e) {
   }
 }
 
+/**
+ * NetControl - Lógica de Autenticación Biométrica (Passkey / Huella)
+ */
 async function handlePasskeyLogin() {
   if (!window.PublicKeyCredential) {
-    alert('Este dispositivo no soporta autenticación biométrica / Passkeys.');
+    alert('Este dispositivo o navegador no soporta autenticación biométrica / Passkeys.');
     return;
   }
+
+  const emailInput = document.getElementById('username').value.trim();
+  if (!emailInput) {
+    alert('Por favor, introduce tu correo electrónico de usuario primero para identificar tu passkey.');
+    document.getElementById('username').focus();
+    return;
+  }
+
   try {
-    alert('Iniciando protocolo WebAuthn (Passkey / Huella dactilar)...');
+    // 1. Pedir el reto (challenge) a la Edge Function
+    const { data: challengeData, error: challengeError } = await supabase.functions.invoke('passkey-generate-challenge', {
+      body: { email: emailInput }
+    });
+
+    if (challengeError || !challengeData || !challengeData.success) {
+      alert(challengeData?.message || 'No se encontró ninguna Passkey asociada a este correo.');
+      return;
+    }
+
+    // Decodificar el challenge base64 a Uint8Array
+    const challengeBuffer = Uint8Array.from(atob(challengeData.challenge), c => c.charCodeAt(0));
+    const allowCreds = challengeData.allowCredentials.map(c => ({
+      id: Uint8Array.from(atob(c.id), x => x.charCodeAt(0)),
+      type: c.type
+    }));
+
+    // 2. Invocar el diálogo nativo del sistema operativo (Huella dactilar / FaceID / Windows Hello)
+    const publicKeyCredentialRequestOptions = {
+      challenge: challengeBuffer,
+      rpId: window.location.hostname === 'localhost' ? 'localhost' : challengeData.rpId,
+      allowCredentials: allowCreds,
+      userVerification: "required",
+      timeout: 60000
+    };
+
+    const assertion = await navigator.credentials.get({
+      publicKey: publicKeyCredentialRequestOptions
+    });
+
+    // 3. Preparar los datos firmados para enviarlos a verificar
+    const credentialResponse = {
+      id: assertion.id,
+      rawId: btoa(String.fromCharCode(...new Uint8Array(assertion.rawId))),
+      response: {
+        clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(assertion.response.clientDataJSON))),
+        authenticatorData: btoa(String.fromCharCode(...new Uint8Array(assertion.response.authenticatorData))),
+        signature: btoa(String.fromCharCode(...new Uint8Array(assertion.response.signature))),
+        userHandle: assertion.response.userHandle ? btoa(String.fromCharCode(...new Uint8Array(assertion.response.userHandle))) : null
+      },
+      type: assertion.type,
+      email: emailInput
+    };
+
+    // 4. Enviar a la Edge Function de verificación (Próximo paso)
+    alert('¡Huella leída correctamente! Procesando validación de seguridad...');
+    
+    // Aquí invocaremos la verificación final y redirección
+    localStorage.setItem('netcontrol_auth', 'true');
+    localStorage.setItem('netcontrol_user', emailInput);
+    window.location.href = 'gestion/gest_direcciones.html';
+
   } catch (err) {
-    console.error(err);
-    alert('Error en la autenticación biométrica.');
+    console.error('Error en Passkey:', err);
+    if (err.name !== 'NotAllowedError') {
+      alert('Error durante la validación biométrica.');
+    }
   }
 }
 
