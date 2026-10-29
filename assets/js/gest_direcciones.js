@@ -61,9 +61,9 @@ window.handleRegisterPasskey = async function() {
   }
 
   try {
-    // 1. Pedir opciones de registro a la Edge Function
+    // 1. Pedir opciones de registro a la Edge Function pasando el dominio actual
     const { data: optionsData, error: optError } = await supabase.functions.invoke('passkey-register-challenge', {
-      body: { email: userEmail }
+      body: { email: userEmail, domain: window.location.hostname }
     });
 
     if (optError || !optionsData || !optionsData.success) {
