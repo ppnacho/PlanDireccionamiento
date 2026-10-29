@@ -56,51 +56,48 @@ async function handleLogin(e) {
 /**
  * NetControl - Lógica de Autenticación Biométrica (Passkey / Huella)
  */
-async function handlePasskeyLogin() {
+window.handlePasskeyLogin = async function() {
   if (!window.PublicKeyCredential) {
-    alert('Este dispositivo o navegador no soporta autenticación biométrica / Passkeys.');
-    return;
-  }
-
-  const emailInput = document.getElementById('username').value.trim();
-  if (!emailInput) {
-    alert('Por favor, introduce tu correo electrónico de usuario primero para identificar tu passkey.');
-    document.getElementById('username').focus();
+    alert('Este dispositivo no soporta Passkeys.');
     return;
   }
 
   try {
-    // 1. Pedir el reto (challenge) a la Edge Function
+    // Intentar coger el email por si el usuario lo escribió, pero no es obligatorio
+    const emailInput = document.getElementById('username')?.value?.trim() || '';
+
+    // 1. Pedir el reto al servidor
     const { data: challengeData, error: challengeError } = await supabase.functions.invoke('passkey-generate-challenge', {
       body: { email: emailInput }
     });
 
     if (challengeError || !challengeData || !challengeData.success) {
-      alert(challengeData?.message || 'No se encontró ninguna Passkey asociada a este correo.');
+      alert(challengeData?.message || 'Error al solicitar el reto biométrico.');
       return;
     }
 
-    // Decodificar el challenge base64 a Uint8Array
     const challengeBuffer = Uint8Array.from(atob(challengeData.challenge), c => c.charCodeAt(0));
-    const allowCreds = challengeData.allowCredentials.map(c => ({
-      id: Uint8Array.from(atob(c.id), x => x.charCodeAt(0)),
-      type: c.type
-    }));
-
-    // 2. Invocar el diálogo nativo del sistema operativo (Huella dactilar / FaceID / Windows Hello)
-    const publicKeyCredentialRequestOptions = {
+    
+    const options = {
       challenge: challengeBuffer,
-      rpId: window.location.hostname === 'localhost' ? 'localhost' : challengeData.rpId,
-      allowCredentials: allowCreds,
+      rpId: challengeData.rpId,
       userVerification: "required",
       timeout: 60000
     };
 
+    // Si hay credenciales específicas filtradas, se añaden
+    if (challengeData.allowCredentials && challengeData.allowCredentials.length > 0) {
+      options.allowCredentials = challengeData.allowCredentials.map(c => ({
+        id: Uint8Array.from(atob(c.id), x => x.charCodeAt(0)),
+        type: c.type
+      }));
+    }
+
+    // 2. Abrir el lector de huellas del móvil (aparecerá tu cuenta guardada automáticamente)
     const assertion = await navigator.credentials.get({
-      publicKey: publicKeyCredentialRequestOptions
+      publicKey: options
     });
 
-    // 3. Preparar los datos firmados para enviarlos a verificar
     const credentialResponse = {
       id: assertion.id,
       rawId: btoa(String.fromCharCode(...new Uint8Array(assertion.rawId))),
@@ -110,22 +107,30 @@ async function handlePasskeyLogin() {
         signature: btoa(String.fromCharCode(...new Uint8Array(assertion.response.signature))),
         userHandle: assertion.response.userHandle ? btoa(String.fromCharCode(...new Uint8Array(assertion.response.userHandle))) : null
       },
-      type: assertion.type,
-      email: emailInput
+      type: assertion.type
     };
 
-    // 4. Enviar a la Edge Function de verificación (Próximo paso)
-    alert('¡Huella leída correctamente! Procesando validación de seguridad...');
-    
-    // Aquí invocaremos la verificación final y redirección
+    // 3. Enviar a verificar a la Edge Function de login
+    const { data: verifyData, error: verifyError } = await supabase.functions.invoke('passkey-verify', {
+      body: { credential: credentialResponse }
+    });
+
+    if (verifyError || !verifyData || !verifyData.success) {
+      alert(verifyData?.message || 'No se pudo validar la huella.');
+      return;
+    }
+
+    // 4. Guardar sesión y redirigir
     localStorage.setItem('netcontrol_auth', 'true');
-    localStorage.setItem('netcontrol_user', emailInput);
+    localStorage.setItem('netcontrol_user', verifyData.email);
+    localStorage.setItem('netcontrol_rol', verifyData.rol);
+    
     window.location.href = 'gestion/gest_direcciones.html';
 
   } catch (err) {
-    console.error('Error en Passkey:', err);
+    console.error('Error en login Passkey:', err);
     if (err.name !== 'NotAllowedError') {
-      alert('Error durante la validación biométrica.');
+      alert('Error durante el acceso biométrico.');
     }
   }
 }
