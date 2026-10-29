@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetControl | Gestión de Direcciones IP</title>
+  
+  <!-- Tailwind CSS & Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    .bg-network {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.90) 100%),
+                  url('../assets/img/background_index.jpeg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .glass-nav {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen bg-network antialiased flex flex-col">
+
+  <!-- ==================== HEADER / NAVEGACIÓN SUPERIOR ==================== -->
+  <header class="glass-nav sticky top-0 z-50 px-4 sm:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+    <!-- Logotipo y Título -->
+    <div class="flex items-center gap-3">
+      <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 shadow-inner">
+        <i class="fa-solid fa-network-wired text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-white leading-tight">NetControl</h1>
+        <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Gestión de Red & MQTT</span>
+      </div>
+    </div>
+
+    <!-- Acciones del Header (Alta de Dispositivos y Logout) -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <span id="user-display" class="hidden md:inline-block text-xs text-slate-300 font-mono bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+        <i class="fa-solid fa-user-shield text-blue-400 mr-1.5"></i> <span class="user-email-text">admin@redlocal.lan</span>
+      </span>
+
+      <!-- Botón Alta de Dispositivos -->
+      <button onclick="openModalAlta()" 
+        class="inline-flex items-center gap-2 py-2 px-3 sm:px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg shadow-md shadow-blue-600/20 transition text-xs sm:text-sm active:scale-95">
+        <i class="fa-solid fa-plus"></i>
+        <span class="hidden sm:inline">Alta Dispositivo</span>
+        <span class="sm:hidden">Alta</span>
+      </button>
+
+      <!-- Botón Logout -->
+      <button onclick="handleLogout()" 
+        class="inline-flex items-center gap-2 py-2 px-3 sm:px-4 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 font-medium rounded-lg transition text-xs sm:text-sm active:scale-95" title="Cerrar Sesión">
+        <i class="fa-solid fa-power-off"></i>
+        <span class="hidden sm:inline">Salir</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- Tarjeta de Resumen / Filtros -->
+    <div class="glass-card p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-bold text-white tracking-tight">Inventario de Direcciones IP y Dispositivos</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Control de subredes, estado DHCP/Estático y topics MQTT por planta.</p>
+      </div>
+      <div class="w-full md:w-auto flex items-center gap-2">
+        <div class="relative w-full md:w-64">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+            <i class="fa-solid fa-search text-xs"></i>
+          </span>
+          <input type="text" id="search-device" placeholder="Filtrar por IP, nombre o planta..." 
+            class="w-full pl-9 pr-4 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 text-xs">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de Dispositivos (Responsive Grid/Table) -->
+    <div class="glass-card rounded-2xl shadow-xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead>
+            <tr class="bg-slate-800/90 text-slate-300 uppercase tracking-wider text-[11px] border-b border-slate-700">
+              <th class="py-3.5 px-4 font-semibold">Dispositivo / Host</th>
+              <th class="py-3.5 px-4 font-semibold">Ubicación (Planta)</th>
+              <th class="py-3.5 px-4 font-semibold">Dirección IP</th>
+              <th class="py-3.5 px-4 font-semibold">Tipo / Modo</th>
+              <th class="py-3.5 px-4 font-semibold">MQTT Topic</th>
+              <th class="py-3.5 px-4 font-semibold text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="device-table-body" class="divide-y divide-slate-700/50 text-slate-200">
+            <!-- Ejemplo de filas estáticas preparadas para carga dinámica -->
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="py-3.5 px-4 font-medium flex items-center gap-2">
+                <i class="fa-solid fa-server text-blue-400"></i> Wemos D1 Mini - Planta 1
+              </td>
+              <td class="py-3.5 px-4 text-slate-400">Planta 1 (Sala Servidores)</td>
+              <td class="py-3.5 px-4 font-mono text-emerald-400">192.168.1.15</td>
+              <td class="py-3.5 px-4"><span class="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded text-[10px] font-semibold">Estática</span></td>
+              <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">tele/p1/sensor</td>
+              <td class="py-3.5 px-4 text-right">
+                <button class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600 transition" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button>
+              </td>
+            </tr>
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="py-3.5 px-4 font-medium flex items-center gap-2">
+                <i class="fa-solid fa-microchip text-emerald-400"></i> ESP32 Control
+              </td>
+              <td class="py-3.5 px-4 text-slate-400">Planta 3 (IoT)</td>
+              <td class="py-3.5 px-4 font-mono text-emerald-400">192.168.3.111</td>
+              <td class="py-3.5 px-4"><span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[10px] font-semibold">DHCP Reservada</span></td>
+              <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">mqtt/esp32/rele</td>
+              <td class="py-3.5 px-4 text-right">
+                <button class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600 transition" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Script Externo de Gestión -->
+  <script type="module" src="../assets/js/gest_direcciones.js" defer></script>
+</body>
+</html>
