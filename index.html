@@ -71,4 +71,35 @@
       </div>
 
       <button type="submit" 
-        class="
+        class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg shadow-lg shadow-blue-600/30 transition transform active:scale-95 flex items-center justify-center gap-2 text-sm">
+        <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+      </button>
+    </form>
+
+    <!-- Separador -->
+    <div class="relative my-6 text-center">
+      <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-700/60"></div></div>
+      <span class="relative px-3 bg-slate-800/80 text-[11px] text-slate-400 uppercase tracking-wider rounded-full">o autenticación biométrica</span>
+    </div>
+
+    <!-- Botón Passkey / Huella -->
+    <button onclick="handlePasskeyLogin()" 
+      class="w-full py-3 px-4 bg-slate-800/90 hover:bg-slate-700/90 border border-slate-600/60 text-slate-200 font-medium rounded-lg transition flex items-center justify-center gap-3 shadow-md group text-sm">
+      <i class="fa-solid fa-fingerprint text-xl text-emerald-400 group-hover:scale-110 transition-transform"></i>
+      <div class="text-left">
+        <div class="leading-tight font-semibold">Autenticación Biométrica</div>
+        <div class="text-[10px] text-slate-400">Validar con Huella / Passkey</div>
+      </div>
+    </button>
+
+    <!-- Pie de página informativo -->
+    <div class="mt-8 text-center border-t border-slate-800/80 pt-4 flex justify-between items-center text-[11px] text-slate-500">
+      <span>GitHub Pages + Supabase</span>
+      <span class="text-emerald-400 flex items-center gap-1 font-mono">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Seguro
+      </span>
+    </div>
+
+  </div>
+</body>
+</html>
