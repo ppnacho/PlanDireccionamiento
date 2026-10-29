@@ -1,5 +1,5 @@
 /**
- * NetControl - Lógica de Autenticación de Portada
+ * NetControl - Lógica de Autenticación de Portada mediante Edge Function
  */
 import { supabase } from './supabaseClient.js';
 
@@ -21,13 +21,36 @@ function checkMobileBiometrics() {
   }
 }
 
+/**
+ * Manejo del inicio de sesión llamando a la Edge Function 'acceso-users'
+ */
 async function handleLogin(e) {
   e.preventDefault();
-  const user = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
+  const emailInput = document.getElementById('username').value.trim();
+  const passwordInput = document.getElementById('password').value.trim();
 
-  // Aquí prepararemos la llamada real a Supabase en cuanto definamos el backend
-  alert(`Acceso solicitado para: ${user}.`);
+  try {
+    // Invocación a la Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('acceso-users', {
+      body: { email: emailInput, password: passwordInput }
+    });
+
+    if (error || !data || !data.success) {
+      alert(data?.message || 'Acceso denegado: Credenciales incorrectas.');
+      return;
+    }
+
+    // Si la Edge Function valida el acceso correctamente
+    localStorage.setItem('netcontrol_auth', 'true');
+    localStorage.setItem('netcontrol_user', data.email);
+
+    // Redirigir a la carpeta gestion/gest_direcciones.html
+    window.location.href = 'gestion/gest_direcciones.html';
+
+  } catch (err) {
+    console.error('Error al invocar la Edge Function:', err);
+    alert('Ocurrió un error al conectar con el servidor de autenticación.');
+  }
 }
 
 async function handlePasskeyLogin() {
@@ -42,3 +65,7 @@ async function handlePasskeyLogin() {
     alert('Error en la autenticación biométrica.');
   }
 }
+
+// Exponer funciones globales para los eventos inline del HTML
+window.handleLogin = handleLogin;
+window.handlePasskeyLogin = handlePasskeyLogin;
