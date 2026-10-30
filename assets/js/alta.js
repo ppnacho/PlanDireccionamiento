@@ -115,7 +115,14 @@ function setupFormSubmit() {
       }
 
       alert('¡Dispositivo registrado correctamente!');
-      window.location.href = 'gest_direcciones.html';
+      form.reset(); // Limpia todos los campos del formulario
+
+      // Ocultar contenedores condicionales si estaban visibles
+      document.getElementById('contenedor-ssid').classList.add('hidden');
+      document.getElementById('contenedor-ip').classList.add('hidden');
+
+      btnGuardar.disabled = false;
+      btnGuardar.innerHTML = `<i class="fa-solid fa-floppy-disk mr-2"></i> Guardar Dispositivo`;
 
     } catch (err) {
       console.error('Error al dar de alta:', err);
