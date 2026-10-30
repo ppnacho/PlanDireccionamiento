@@ -88,9 +88,26 @@ function setupFormSubmit() {
         body: payload
       });
 
-      // Si Supabase devuelve error de transporte o la Edge Function devuelve success: false
+      // Si la Edge Function devuelve un código de error HTTP (ej. 400)
       if (error) {
-        throw new Error(error.message || 'Error de comunicación con el servidor.');
+        let errorMessage = error.message;
+        
+        // Extraer el JSON de error enviado por nuestra Edge Function
+        if (error.context) {
+          try {
+            const errorBody = await error.context.json();
+            if (errorBody && errorBody.message) {
+              errorMessage = errorBody.message;
+            }
+          } catch (e) {
+            try {
+              const errorText = await error.context.text();
+              if (errorText) errorMessage = errorText;
+            } catch (_) {}
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       if (data && data.success === false) {
@@ -102,7 +119,7 @@ function setupFormSubmit() {
 
     } catch (err) {
       console.error('Error al dar de alta:', err);
-      // Aquí mostrará exactamente el texto de que la MAC o la IP ya existen
+      // Aquí aparecerá exactamente el texto de que la MAC o la IP ya existen
       alert(err.message);
       btnGuardar.disabled = false;
       btnGuardar.innerHTML = `<i class="fa-solid fa-floppy-disk mr-2"></i> Guardar Dispositivo`;
