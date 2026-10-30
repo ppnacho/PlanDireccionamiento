@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) con Texturas Dinámicas (Hostnames y LEDs)
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) con Texturas Iluminadas y Posicionamiento Frontal
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -33,7 +33,7 @@ function loadUserInfo() {
 }
 
 /**
- * Inicializa el entorno 3D Three.js
+ * Inicializa el entorno 3D Three.js con iluminación reforzada
  */
 function init3DEnvironment() {
   const container = document.getElementById('webgl-container');
@@ -41,13 +41,13 @@ function init3DEnvironment() {
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x020408);
-  scene.fog = new THREE.FogExp2(0x020408, 0.03);
+  scene.fog = new THREE.FogExp2(0x020408, 0.02);
 
   const width = container.clientWidth || window.innerWidth;
   const height = container.clientHeight || (window.innerHeight - 73);
 
   camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 1000);
-  camera.position.set(0, 5, 18);
+  camera.position.set(0, 4, 16);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setSize(width, height);
@@ -59,30 +59,35 @@ function init3DEnvironment() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.maxPolarAngle = Math.PI / 2 - 0.02; 
-  controls.minDistance = 4;
+  controls.minDistance = 3;
   controls.maxDistance = 40;
 
-  // Iluminación de Sala Técnica
-  const ambientLight = new THREE.AmbientLight(0x1e293b, 1.2);
+  // Iluminación general brillante para evitar siluetas oscuras
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
   scene.add(ambientLight);
 
-  const dirLight = new THREE.DirectionalLight(0x38bdf8, 1.5);
-  dirLight.position.set(15, 25, 15);
+  const dirLight = new THREE.DirectionalLight(0x38bdf8, 2.0);
+  dirLight.position.set(10, 30, 20);
   scene.add(dirLight);
 
-  // Suelo técnico tipo baldosas de Data Center
+  // Luz puntual central de sala
+  const roomLight = new THREE.PointLight(0x3b82f6, 3, 40);
+  roomLight.position.set(0, 10, 0);
+  scene.add(roomLight);
+
+  // Suelo técnico
   const floorGeo = new THREE.PlaneGeometry(60, 60);
   const floorMat = new THREE.MeshStandardMaterial({ 
-    color: 0x070b12, 
-    roughness: 0.8, 
-    metalness: 0.2 
+    color: 0x0b1329, 
+    roughness: 0.7, 
+    metalness: 0.3 
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -2.5;
   scene.add(floor);
 
-  const gridHelper = new THREE.GridHelper(60, 40, 0x2563eb, 0x1e293b);
+  const gridHelper = new THREE.GridHelper(60, 40, 0x3b82f6, 0x1e293b);
   gridHelper.position.y = -2.48;
   scene.add(gridHelper);
 
@@ -136,7 +141,7 @@ async function fetchDevices() {
 }
 
 /**
- * Crea una textura dinámica en Canvas pintando únicamente los LEDs y el Hostname
+ * Crea una textura dinámica en Canvas con alta visibilidad y contraste
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
@@ -144,32 +149,32 @@ function createBladeTexture(device) {
   canvas.height = 128;
   const ctx = canvas.getContext('2d');
 
-  // Fondo metálico oscuro de la blade
-  ctx.fillStyle = '#111827';
+  // Fondo de la blade
+  ctx.fillStyle = '#1e293b';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Borde técnico y ranuras de ventilación simuladas
-  ctx.strokeStyle = '#374151';
-  ctx.lineWidth = 6;
-  ctx.strokeRect(3, 3, canvas.width - 6, canvas.height - 6);
+  // Borde técnico
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
 
-  // LED 1 (Conexión: Wifi = Azul, Eth = Verde)
+  // LED 1 (Conexión)
   const isWifi = device.tipo_conexion === 'WIFI';
   ctx.fillStyle = isWifi ? '#38bdf8' : '#22c55e';
   ctx.beginPath();
   ctx.arc(35, 64, 12, 0, Math.PI * 2);
   ctx.fill();
 
-  // LED 2 (Tipo IP: Estática = Verde, Dinámica = Ámbar)
+  // LED 2 (Tipo IP)
   const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
   ctx.fillStyle = isStatic ? '#22c55e' : '#f59e0b';
   ctx.beginPath();
   ctx.arc(75, 64, 12, 0, Math.PI * 2);
   ctx.fill();
 
-  // Texto: Hostname principal (centrado verticalmente)
+  // Hostname en texto blanco brillante
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 42px monospace';
+  ctx.font = 'bold 40px monospace';
   const displayName = device.hostname || device.id_hw || 'Nodo Sin ID';
   ctx.fillText(displayName, 115, 76);
 
@@ -178,7 +183,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con 5 filas de racks (2 racks por planta, 1 en escaleras)
+ * Construye la sala técnica 3D con posicionamiento frontal correcto de las blades
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -201,16 +206,17 @@ function buildDataCenterRoom(devices) {
 
   plantConfig.forEach((row, rowIndex) => {
     const rowDevices = groupedByPlant[row.name] || [];
-    const zPos = (rowIndex - 2) * 4.2;
+    const zPos = (rowIndex - 2) * 4.5;
 
     for (let r = 0; r < row.racks; r++) {
-      const xPos = row.racks === 2 ? (r === 0 ? -1.8 : 1.8) : 0;
+      const xPos = row.racks === 2 ? (r === 0 ? -2.0 : 2.0) : 0;
 
-      const rackGeo = new THREE.BoxGeometry(3.2, 4.2, 1.1);
+      // Chasis del Rack
+      const rackGeo = new THREE.BoxGeometry(3.4, 4.4, 1.2);
       const rackMat = new THREE.MeshStandardMaterial({ 
         color: 0x0f172a, 
-        roughness: 0.3, 
-        metalness: 0.85 
+        roughness: 0.2, 
+        metalness: 0.9 
       });
       const rackMesh = new THREE.Mesh(rackGeo, rackMat);
       rackMesh.position.set(xPos, 0, zPos);
@@ -220,21 +226,24 @@ function buildDataCenterRoom(devices) {
         ? rowDevices.filter((_, idx) => idx % 2 === r) 
         : rowDevices;
 
-      const displayItems = rackDevices.length > 0 ? rackDevices : [];
-
-      displayItems.forEach((device, dIndex) => {
+      rackDevices.forEach((device, dIndex) => {
         if (dIndex >= 7) return;
-        const yOffset = 1.4 - (dIndex * 0.55);
+        const yOffset = 1.5 - (dIndex * 0.55);
 
-        const bladeGeo = new THREE.BoxGeometry(2.9, 0.45, 0.9);
+        const bladeGeo = new THREE.BoxGeometry(3.0, 0.45, 0.2);
+        
+        // Material emisivo para que la textura brille por sí misma y no dependa de sombras oscuras
         const bladeMat = new THREE.MeshStandardMaterial({ 
           map: createBladeTexture(device),
-          roughness: 0.2,
-          metalness: 0.5
+          emissive: 0xffffff,
+          emissiveMap: createBladeTexture(device),
+          emissiveIntensity: 0.4,
+          roughness: 0.1
         });
 
         const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
-        bladeMesh.position.set(xPos, yOffset, zPos + 0.08);
+        // Posicionamiento frontal exacto por delante del rack (zPos + 0.65)
+        bladeMesh.position.set(xPos, yOffset, zPos + 0.65);
         
         bladeMesh.userData = device;
         scene.add(bladeMesh);
