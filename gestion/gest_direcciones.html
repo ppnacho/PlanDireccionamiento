@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NetControl | Gestión de Direcciones IP</title>
+  <title>NetControl | Hub de Control de Red</title>
   
   <!-- Tailwind CSS & Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -30,6 +30,17 @@
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
+    .hub-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    .hub-card:hover {
+      background: rgba(30, 41, 59, 0.9);
+      border-color: rgba(59, 130, 246, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.3);
+    }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen bg-network antialiased flex flex-col">
@@ -43,7 +54,7 @@
       </div>
       <div>
         <h1 class="text-lg font-bold tracking-tight text-white leading-tight">NetControl</h1>
-        <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Gestión de Red & MQTT</span>
+        <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Centro de Control de Red</span>
       </div>
     </div>
 
@@ -54,12 +65,12 @@
       </span>
 
       <!-- Botón Alta de Dispositivos -->
-      <button onclick="openModalAlta()" 
+      <a href="alta.html" 
         class="inline-flex items-center gap-2 py-2 px-3 sm:px-4 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg shadow-md shadow-blue-600/20 transition text-xs sm:text-sm active:scale-95">
         <i class="fa-solid fa-plus"></i>
         <span class="hidden sm:inline">Alta Dispositivo</span>
         <span class="sm:hidden">Alta</span>
-      </button>
+      </a>
 
       <!-- Botón Logout -->
       <button onclick="handleLogout()" 
@@ -67,83 +78,47 @@
         <i class="fa-solid fa-power-off"></i>
         <span class="hidden sm:inline">Salir</span>
       </button>
-
-      <button id="btn-vincular-huella" onclick="handleRegisterPasskey()" style="display: none;"
-        class="inline-flex items-center gap-2 py-2 px-3 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 font-medium rounded-lg transition text-xs sm:text-sm">
-        <i class="fa-solid fa-fingerprint"></i>
-        <span class="hidden sm:inline">Vincular Huella</span>
-      </button>
     </div>
   </header>
 
-  <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+  <!-- ==================== CONTENIDO PRINCIPAL (HUB DE SELECCIÓN) ==================== -->
+  <main class="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-center items-center">
 
-    <!-- Tarjeta de Resumen / Filtros -->
-    <div class="glass-card p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
-      <div>
-        <h2 class="text-xl font-bold text-white tracking-tight">Inventario de Direcciones IP y Dispositivos</h2>
-        <p class="text-xs text-slate-400 mt-0.5">Control de subredes, estado DHCP/Estático y topics MQTT por planta.</p>
-      </div>
-      <div class="w-full md:w-auto flex items-center gap-2">
-        <div class="relative w-full md:w-64">
-          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-            <i class="fa-solid fa-search text-xs"></i>
-          </span>
-          <input type="text" id="search-device" placeholder="Filtrar por IP, nombre o planta..." 
-            class="w-full pl-9 pr-4 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 text-xs">
-        </div>
-      </div>
+    <div class="text-center mb-8 space-y-2">
+      <h2 class="text-2xl font-bold text-white tracking-tight">Selecciona el Modo de Visualización</h2>
+      <p class="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto">Elige entre la sala de servidores 3D estructurada por plantas o la topología de red avanzada.</p>
     </div>
 
-    <!-- Tabla de Dispositivos (Responsive Grid/Table) -->
-    <div class="glass-card rounded-2xl shadow-xl overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs sm:text-sm">
-          <thead>
-            <tr class="bg-slate-800/90 text-slate-300 uppercase tracking-wider text-[11px] border-b border-slate-700">
-              <th class="py-3.5 px-4 font-semibold">Dispositivo / Host</th>
-              <th class="py-3.5 px-4 font-semibold">Ubicación (Planta)</th>
-              <th class="py-3.5 px-4 font-semibold">Dirección IP</th>
-              <th class="py-3.5 px-4 font-semibold">Tipo / Modo</th>
-              <th class="py-3.5 px-4 font-semibold">MQTT Topic</th>
-              <th class="py-3.5 px-4 font-semibold text-right">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="device-table-body" class="divide-y divide-slate-700/50 text-slate-200">
-            <!-- Ejemplo de filas estáticas preparadas para carga dinámica -->
-            <tr class="hover:bg-slate-800/40 transition">
-              <td class="py-3.5 px-4 font-medium flex items-center gap-2">
-                <i class="fa-solid fa-server text-blue-400"></i> Wemos D1 Mini - Planta 1
-              </td>
-              <td class="py-3.5 px-4 text-slate-400">Planta 1 (Sala Servidores)</td>
-              <td class="py-3.5 px-4 font-mono text-emerald-400">192.168.1.15</td>
-              <td class="py-3.5 px-4"><span class="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded text-[10px] font-semibold">Estática</span></td>
-              <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">tele/p1/sensor</td>
-              <td class="py-3.5 px-4 text-right">
-                <button class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600 transition" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button>
-              </td>
-            </tr>
-            <tr class="hover:bg-slate-800/40 transition">
-              <td class="py-3.5 px-4 font-medium flex items-center gap-2">
-                <i class="fa-solid fa-microchip text-emerald-400"></i> ESP32 Control
-              </td>
-              <td class="py-3.5 px-4 text-slate-400">Planta 3 (IoT)</td>
-              <td class="py-3.5 px-4 font-mono text-emerald-400">192.168.3.111</td>
-              <td class="py-3.5 px-4"><span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[10px] font-semibold">DHCP Reservada</span></td>
-              <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">mqtt/esp32/rele</td>
-              <td class="py-3.5 px-4 text-right">
-                <button class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-600 transition" title="Editar"><i class="fa-solid fa-pen text-xs"></i></button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- Contenedor de Botones / Tarjetas de Navegación -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl">
+      
+      <!-- Opción Izquierda: Representación 3D (Sala de Racks) -->
+      <a href="representacion_3d.html" class="hub-card rounded-2xl p-6 flex flex-col items-center text-center gap-4 group">
+        <div class="w-24 h-24 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center p-3 shadow-inner group-hover:scale-105 transition">
+          <img src="../assets/img/3d.png" alt="Representación 3D" class="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]">
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white group-hover:text-blue-400 transition">Sala de Racks (3D)</h3>
+          <p class="text-xs text-slate-400 mt-1">Visualiza los dispositivos organizados en las 5 zonas de rack con estado LED y detalle en burbuja.</p>
+        </div>
+      </a>
+
+      <!-- Opción Derecha: Topología de Red -->
+      <a href="topologia_red.html" class="hub-card rounded-2xl p-6 flex flex-col items-center text-center gap-4 group">
+        <div class="w-24 h-24 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center p-3 shadow-inner group-hover:scale-105 transition">
+          <img src="../assets/img/red.png" alt="Topología de Red" class="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]">
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white group-hover:text-blue-400 transition">Topología de Red</h3>
+          <p class="text-xs text-slate-400 mt-1">Explora el mapa de nodos interconectados, subredes y enlaces troncales del sistema.</p>
+        </div>
+      </a>
+
     </div>
 
   </main>
 
-  <!-- Script Externo de Gestión -->
+  <!-- Script Externo de Control de Sesión -->
   <script type="module" src="../assets/js/gest_direcciones.js" defer></script>
 </body>
 </html>
