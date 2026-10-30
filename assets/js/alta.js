@@ -88,8 +88,13 @@ function setupFormSubmit() {
         body: payload
       });
 
-      if (error || !data || !data.success) {
-        throw new Error(data?.message || error?.message || 'Error desconocido al guardar.');
+      // Si Supabase devuelve error de transporte o la Edge Function devuelve success: false
+      if (error) {
+        throw new Error(error.message || 'Error de comunicación con el servidor.');
+      }
+
+      if (data && data.success === false) {
+        throw new Error(data.message || 'No se pudo guardar el dispositivo.');
       }
 
       alert('¡Dispositivo registrado correctamente!');
@@ -97,7 +102,8 @@ function setupFormSubmit() {
 
     } catch (err) {
       console.error('Error al dar de alta:', err);
-      alert(`No se pudo guardar el dispositivo: ${err.message}`);
+      // Aquí mostrará exactamente el texto de que la MAC o la IP ya existen
+      alert(err.message);
       btnGuardar.disabled = false;
       btnGuardar.innerHTML = `<i class="fa-solid fa-floppy-disk mr-2"></i> Guardar Dispositivo`;
     }
