@@ -66,8 +66,9 @@ function setupFormSubmit() {
     const payload = {
       planta: document.getElementById('planta').value,
       estancia: document.getElementById('estancia').value,
+      hostname: document.getElementById('hostname').value.trim() || null,
       tipo_conexion: document.getElementById('tipo_conexion').value,
-      ssid: document.getElementById('ssid').value || null,
+      ssid: document.getElementById('ssid').value.trim() || null,
       id_hw: document.getElementById('id_hw').value.trim(),
       mac: document.getElementById('mac').value.trim(),
       tipo_ip: document.getElementById('tipo_ip').value,
