@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) con Texturas Iluminadas y Posicionamiento Frontal
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Blades Realistas y Ajustadas
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -33,7 +33,7 @@ function loadUserInfo() {
 }
 
 /**
- * Inicializa el entorno 3D Three.js con iluminación reforzada
+ * Inicializa el entorno 3D Three.js
  */
 function init3DEnvironment() {
   const container = document.getElementById('webgl-container');
@@ -62,7 +62,7 @@ function init3DEnvironment() {
   controls.minDistance = 3;
   controls.maxDistance = 40;
 
-  // Iluminación general brillante para evitar siluetas oscuras
+  // Iluminación general de sala
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
   scene.add(ambientLight);
 
@@ -70,7 +70,6 @@ function init3DEnvironment() {
   dirLight.position.set(10, 30, 20);
   scene.add(dirLight);
 
-  // Luz puntual central de sala
   const roomLight = new THREE.PointLight(0x3b82f6, 3, 40);
   roomLight.position.set(0, 10, 0);
   scene.add(roomLight);
@@ -141,7 +140,7 @@ async function fetchDevices() {
 }
 
 /**
- * Crea una textura dinámica en Canvas con alta visibilidad y contraste
+ * Crea una textura metálica realista con fuente fina y LEDs limpios
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
@@ -149,41 +148,45 @@ function createBladeTexture(device) {
   canvas.height = 128;
   const ctx = canvas.getContext('2d');
 
-  // Fondo de la blade
-  ctx.fillStyle = '#1e293b';
+  // Gradiente metálico horizontal para simular chasis de aluminio cepillado
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#1e293b');
+  gradient.addColorStop(0.5, '#0f172a');
+  gradient.addColorStop(1, '#090d16');
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Borde técnico
-  ctx.strokeStyle = '#3b82f6';
-  ctx.lineWidth = 4;
+  // Línea superior de brillo metálico
+  ctx.strokeStyle = '#475569';
+  ctx.lineWidth = 2;
   ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
 
   // LED 1 (Conexión)
   const isWifi = device.tipo_conexion === 'WIFI';
   ctx.fillStyle = isWifi ? '#38bdf8' : '#22c55e';
   ctx.beginPath();
-  ctx.arc(35, 64, 12, 0, Math.PI * 2);
+  ctx.arc(35, 64, 9, 0, Math.PI * 2);
   ctx.fill();
 
   // LED 2 (Tipo IP)
   const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
   ctx.fillStyle = isStatic ? '#22c55e' : '#f59e0b';
   ctx.beginPath();
-  ctx.arc(75, 64, 12, 0, Math.PI * 2);
+  ctx.arc(68, 64, 9, 0, Math.PI * 2);
   ctx.fill();
 
-  // Hostname en texto blanco brillante
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 40px monospace';
+  // Hostname con fuente fina y elegante (no bold)
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = '28px monospace';
   const displayName = device.hostname || device.id_hw || 'Nodo Sin ID';
-  ctx.fillText(displayName, 115, 76);
+  ctx.fillText(displayName, 105, 73);
 
   const texture = new THREE.CanvasTexture(canvas);
   return texture;
 }
 
 /**
- * Construye la sala técnica 3D con posicionamiento frontal correcto de las blades
+ * Construye la sala técnica 3D con las blades ajustadas al plano frontal del rack
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -215,8 +218,8 @@ function buildDataCenterRoom(devices) {
       const rackGeo = new THREE.BoxGeometry(3.4, 4.4, 1.2);
       const rackMat = new THREE.MeshStandardMaterial({ 
         color: 0x0f172a, 
-        roughness: 0.2, 
-        metalness: 0.9 
+        roughness: 0.3, 
+        metalness: 0.85 
       });
       const rackMesh = new THREE.Mesh(rackGeo, rackMat);
       rackMesh.position.set(xPos, 0, zPos);
@@ -230,20 +233,20 @@ function buildDataCenterRoom(devices) {
         if (dIndex >= 7) return;
         const yOffset = 1.5 - (dIndex * 0.55);
 
-        const bladeGeo = new THREE.BoxGeometry(3.0, 0.45, 0.2);
+        // Geometría más delgada (profundidad 0.08) para que sobresalga lo justo
+        const bladeGeo = new THREE.BoxGeometry(3.0, 0.45, 0.08);
         
-        // Material emisivo para que la textura brille por sí misma y no dependa de sombras oscuras
         const bladeMat = new THREE.MeshStandardMaterial({ 
           map: createBladeTexture(device),
           emissive: 0xffffff,
           emissiveMap: createBladeTexture(device),
-          emissiveIntensity: 0.4,
-          roughness: 0.1
+          emissiveIntensity: 0.25,
+          roughness: 0.2
         });
 
         const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
-        // Posicionamiento frontal exacto por delante del rack (zPos + 0.65)
-        bladeMesh.position.set(xPos, yOffset, zPos + 0.65);
+        // Posicionamiento frontal ajustado (zPos + 0.58) para que no sobresalga en exceso
+        bladeMesh.position.set(xPos, yOffset, zPos + 0.58);
         
         bladeMesh.userData = device;
         scene.add(bladeMesh);
