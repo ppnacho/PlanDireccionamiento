@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) con Blades estilizadas (Altura reducida un 40%)
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Distribución única por estancias (Sin duplicados)
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -140,12 +140,12 @@ async function fetchDevices() {
 }
 
 /**
- * Crea una textura compacta adaptada a la nueva altura reducida un 40%
+ * Crea una textura compacta adaptada a la altura reducida
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
   canvas.width = 256;
-  canvas.height = 80; // Proporcional a la nueva altura de la blade
+  canvas.height = 80;
   const ctx = canvas.getContext('2d');
 
   ctx.fillStyle = '#1e293b';
@@ -195,7 +195,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con altura de blades reducida un 40% y doble columna
+ * Construye la sala técnica agrupando dispositivos por estancias ordenadas sin duplicados
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -216,14 +216,24 @@ function buildDataCenterRoom(devices) {
     return acc;
   }, {});
 
-  plantConfig.forEach((row, rowIndex) => {
-    const rowDevices = groupedByPlant[row.name] || [];
+  plantConfig.forEach((rowConfig, rowIndex) => {
+    const rowDevices = groupedByPlant[rowConfig.name] || [];
     const zPos = (rowIndex - 2) * 4.5;
 
-    for (let r = 0; r < row.racks; r++) {
-      const rackCenterX = row.racks === 2 ? (r === 0 ? -2.0 : 2.0) : 0;
+    // Agrupar los dispositivos de esta planta por estancias para estructurar subracks
+    const groupedByEstancia = rowDevices.reduce((acc, d) => {
+      const est = (d.estancia || 'General').toUpperCase();
+      if (!acc[est]) acc[est] = [];
+      acc[est].push(d);
+      return acc;
+    }, {});
 
-      // Chasis del Rack
+    const estanciasKeys = Object.keys(groupedByEstancia);
+
+    for (let r = 0; r < rowConfig.racks; r++) {
+      const rackCenterX = rowConfig.racks === 2 ? (r === 0 ? -2.0 : 2.0) : 0;
+
+      // Chasis del Rack Físico
       const rackGeo = new THREE.BoxGeometry(3.4, 4.4, 1.2);
       const rackMat = new THREE.MeshStandardMaterial({ 
         color: 0x0f172a, 
@@ -234,33 +244,47 @@ function buildDataCenterRoom(devices) {
       rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
 
-      // Distribuir dispositivos en 2 columnas dentro del rack
-      rowDevices.forEach((device, dIndex) => {
-        if (dIndex >= 18) return; 
+      // Asignar estancias específicas a este rack si hay 2 racks, o todas si hay 1
+      let rackEstancias = [];
+      if (rowConfig.racks === 2) {
+        rackEstancias = estanciasKeys.filter((_, idx) => idx % 2 === r);
+      } else {
+        rackEstancias = estanciasKeys;
+      }
 
-        const col = dIndex % 2; 
-        const rowIdx = Math.floor(dIndex / 2);
+      let globalDeviceIndex = 0;
 
-        const xPos = rackCenterX + (col === 0 ? -0.78 : 0.78);
-        const yOffset = 1.6 - (rowIdx * 0.38); // Paso vertical ajustado al nuevo tamaño
+      rackEstancias.forEach(estanciaName => {
+        const estanciaDevices = groupedByEstancia[estanciaName] || [];
 
-        // Geometría con altura reducida un 40% (0.45 * 0.6 = 0.27)
-        const bladeGeo = new THREE.BoxGeometry(1.4, 0.27, 0.08);
-        
-        const bladeMat = new THREE.MeshStandardMaterial({ 
-          map: createBladeTexture(device),
-          emissive: 0xffffff,
-          emissiveMap: createBladeTexture(device),
-          emissiveIntensity: 0.25,
-          roughness: 0.2
+        estanciaDevices.forEach((device) => {
+          if (globalDeviceIndex >= 18) return;
+
+          const col = globalDeviceIndex % 2; 
+          const rowIdx = Math.floor(globalDeviceIndex / 2);
+
+          const xPos = rackCenterX + (col === 0 ? -0.78 : 0.78);
+          const yOffset = 1.6 - (rowIdx * 0.38);
+
+          const bladeGeo = new THREE.BoxGeometry(1.4, 0.27, 0.08);
+          
+          const bladeMat = new THREE.MeshStandardMaterial({ 
+            map: createBladeTexture(device),
+            emissive: 0xffffff,
+            emissiveMap: createBladeTexture(device),
+            emissiveIntensity: 0.25,
+            roughness: 0.2
+          });
+
+          const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
+          bladeMesh.position.set(xPos, yOffset, zPos + 0.58);
+          
+          bladeMesh.userData = device;
+          scene.add(bladeMesh);
+          rackMeshes.push(bladeMesh);
+
+          globalDeviceIndex++;
         });
-
-        const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
-        bladeMesh.position.set(xPos, yOffset, zPos + 0.58);
-        
-        bladeMesh.userData = device;
-        scene.add(bladeMesh);
-        rackMeshes.push(bladeMesh);
       });
     }
   });
