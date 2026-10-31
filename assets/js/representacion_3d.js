@@ -386,5 +386,5 @@ window.openBladeModal = function(device) {
 };
 
 window.closeModal = function() {
-  document.getElementById('blade-modal'].classList.add('hidden');
+  document.getElementById('blade-modal').classList.add('hidden');
 };
