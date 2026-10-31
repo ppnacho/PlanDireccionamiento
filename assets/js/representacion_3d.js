@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) con Textura Fotorealista de Frontal Blade
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) con Doble Columna de Blades y Diseño Compacto
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -140,58 +140,55 @@ async function fetchDevices() {
 }
 
 /**
- * Carga la imagen real del frontal (blade_front.png) y dibuja encima los LEDs y el Hostname
+ * Crea una textura compacta de media anchura con fuente más fina y recuadro redondeado gris
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
+  canvas.width = 256;
   canvas.height = 128;
   const ctx = canvas.getContext('2d');
 
-  // Fondo provisional mientras carga la imagen
+  // Fondo provisional
   ctx.fillStyle = '#1e293b';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   const texture = new THREE.CanvasTexture(canvas);
 
-  // Cargar la imagen real del frontal del servidor
   const img = new Image();
   img.src = '../assets/img/blade_front.png';
   img.onload = () => {
-    // Dibujar la imagen real adaptada al canvas
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
     // LED 1 (Conexión)
     const isWifi = device.tipo_conexion === 'WIFI';
     ctx.fillStyle = isWifi ? '#38bdf8' : '#22c55e';
     ctx.beginPath();
-    ctx.arc(38, 64, 7, 0, Math.PI * 2);
+    ctx.arc(22, 64, 5, 0, Math.PI * 2);
     ctx.fill();
 
     // LED 2 (Tipo IP)
     const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
     ctx.fillStyle = isStatic ? '#22c55e' : '#f59e0b';
     ctx.beginPath();
-    ctx.arc(62, 64, 7, 0, Math.PI * 2);
+    ctx.arc(38, 64, 5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Recuadro de fondo gris con esquinas redondeadas (radio de 8px)
-    ctx.fillStyle = '#cbd5e1'; // Gris claro (slate-300)
-    ctx.strokeStyle = '#64748b'; // Borde sutil
-    ctx.lineWidth = 2;
+    // Recuadro de fondo gris con esquinas redondeadas adaptado al ancho compacto
+    ctx.fillStyle = '#cbd5e1'; 
+    ctx.strokeStyle = '#64748b'; 
+    ctx.lineWidth = 1.2;
 
     ctx.beginPath();
-    ctx.roundRect(100, 36, 375, 56, 8);
+    ctx.roundRect(50, 38, 192, 52, 6);
     ctx.fill();
     ctx.stroke();
 
-    // Hostname en color negro y nítido sobre el recuadro
+    // Hostname en color negro, con tipografía más fina y tamaño optimizado
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 24px monospace';
-    const displayName = device.hostname || device.id_hw || 'Nodo Sin ID';
-    ctx.fillText(displayName, 115, 73);
+    ctx.font = '17px monospace';
+    const displayName = device.hostname || device.id_hw || 'Nodo';
+    ctx.fillText(displayName, 58, 70);
 
-    // Notificar a Three.js que la textura del canvas se ha actualizado
     texture.needsUpdate = true;
   };
 
@@ -199,7 +196,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con las blades ajustadas al plano frontal del rack
+ * Construye la sala técnica 3D con 2 columnas de blades por rack
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -225,7 +222,7 @@ function buildDataCenterRoom(devices) {
     const zPos = (rowIndex - 2) * 4.5;
 
     for (let r = 0; r < row.racks; r++) {
-      const xPos = row.racks === 2 ? (r === 0 ? -2.0 : 2.0) : 0;
+      const rackCenterX = row.racks === 2 ? (r === 0 ? -2.0 : 2.0) : 0;
 
       // Chasis del Rack
       const rackGeo = new THREE.BoxGeometry(3.4, 4.4, 1.2);
@@ -235,18 +232,21 @@ function buildDataCenterRoom(devices) {
         metalness: 0.85 
       });
       const rackMesh = new THREE.Mesh(rackGeo, rackMat);
-      rackMesh.position.set(xPos, 0, zPos);
+      rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
 
-      const rackDevices = row.racks === 2 
-        ? rowDevices.filter((_, idx) => idx % 2 === r) 
-        : rowDevices;
+      // Distribuir dispositivos en 2 columnas dentro del rack
+      rowDevices.forEach((device, dIndex) => {
+        if (dIndex >= 14) return; // Hasta 14 dispositivos por rack (7 filas x 2 columnas)
 
-      rackDevices.forEach((device, dIndex) => {
-        if (dIndex >= 7) return;
-        const yOffset = 1.5 - (dIndex * 0.55);
+        const col = dIndex % 2; // 0 = Izquierda, 1 = Derecha
+        const rowIdx = Math.floor(dIndex / 2);
 
-        const bladeGeo = new THREE.BoxGeometry(3.0, 0.45, 0.08);
+        const xPos = rackCenterX + (col === 0 ? -0.78 : 0.78);
+        const yOffset = 1.5 - (rowIdx * 0.55);
+
+        // Geometría de la blade reducida a la mitad de ancho (~1.4)
+        const bladeGeo = new THREE.BoxGeometry(1.4, 0.45, 0.08);
         
         const bladeMat = new THREE.MeshStandardMaterial({ 
           map: createBladeTexture(device),
