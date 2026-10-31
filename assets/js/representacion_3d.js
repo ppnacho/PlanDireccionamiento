@@ -175,13 +175,23 @@ function createBladeTexture(device) {
     ctx.arc(62, 64, 7, 0, Math.PI * 2);
     ctx.fill();
 
-    // Hostname con letra fina y elegante sobre el frontal real
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '24px monospace';
-    const displayName = device.hostname || device.id_hw || 'Nodo Sin ID';
-    ctx.fillText(displayName, 105, 71);
+    // Recuadro de fondo gris con esquinas redondeadas (radio de 8px)
+    ctx.fillStyle = '#cbd5e1'; // Gris claro (slate-300)
+    ctx.strokeStyle = '#64748b'; // Borde sutil
+    ctx.lineWidth = 2;
 
-    // Notificar a Three.js que la textura del canvas se ha actualizado con la imagen
+    ctx.beginPath();
+    ctx.roundRect(100, 36, 375, 56, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Hostname en color negro y nítido sobre el recuadro
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 24px monospace';
+    const displayName = device.hostname || device.id_hw || 'Nodo Sin ID';
+    ctx.fillText(displayName, 115, 73);
+
+    // Notificar a Three.js que la textura del canvas se ha actualizado
     texture.needsUpdate = true;
   };
 
