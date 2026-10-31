@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) con Doble Columna de Blades y Diseño Compacto
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) con Blades estilizadas (Altura reducida un 40%)
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -140,15 +140,14 @@ async function fetchDevices() {
 }
 
 /**
- * Crea una textura compacta de media anchura con fuente más fina y recuadro redondeado gris
+ * Crea una textura compacta adaptada a la nueva altura reducida un 40%
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
   canvas.width = 256;
-  canvas.height = 128;
+  canvas.height = 80; // Proporcional a la nueva altura de la blade
   const ctx = canvas.getContext('2d');
 
-  // Fondo provisional
   ctx.fillStyle = '#1e293b';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -163,31 +162,31 @@ function createBladeTexture(device) {
     const isWifi = device.tipo_conexion === 'WIFI';
     ctx.fillStyle = isWifi ? '#38bdf8' : '#22c55e';
     ctx.beginPath();
-    ctx.arc(22, 64, 5, 0, Math.PI * 2);
+    ctx.arc(22, 40, 4.5, 0, Math.PI * 2);
     ctx.fill();
 
     // LED 2 (Tipo IP)
     const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
     ctx.fillStyle = isStatic ? '#22c55e' : '#f59e0b';
     ctx.beginPath();
-    ctx.arc(38, 64, 5, 0, Math.PI * 2);
+    ctx.arc(38, 40, 4.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Recuadro de fondo gris con esquinas redondeadas adaptado al ancho compacto
+    // Recuadro de fondo gris con esquinas redondeadas
     ctx.fillStyle = '#cbd5e1'; 
     ctx.strokeStyle = '#64748b'; 
     ctx.lineWidth = 1.2;
 
     ctx.beginPath();
-    ctx.roundRect(50, 38, 192, 52, 6);
+    ctx.roundRect(50, 22, 192, 36, 5);
     ctx.fill();
     ctx.stroke();
 
-    // Hostname en color negro, con tipografía más fina y tamaño optimizado
+    // Hostname en color negro y legible
     ctx.fillStyle = '#000000';
-    ctx.font = '17px monospace';
+    ctx.font = '15px monospace';
     const displayName = device.hostname || device.id_hw || 'Nodo';
-    ctx.fillText(displayName, 58, 70);
+    ctx.fillText(displayName, 58, 45);
 
     texture.needsUpdate = true;
   };
@@ -196,7 +195,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con 2 columnas de blades por rack
+ * Construye la sala técnica 3D con altura de blades reducida un 40% y doble columna
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -237,16 +236,16 @@ function buildDataCenterRoom(devices) {
 
       // Distribuir dispositivos en 2 columnas dentro del rack
       rowDevices.forEach((device, dIndex) => {
-        if (dIndex >= 14) return; // Hasta 14 dispositivos por rack (7 filas x 2 columnas)
+        if (dIndex >= 18) return; 
 
-        const col = dIndex % 2; // 0 = Izquierda, 1 = Derecha
+        const col = dIndex % 2; 
         const rowIdx = Math.floor(dIndex / 2);
 
         const xPos = rackCenterX + (col === 0 ? -0.78 : 0.78);
-        const yOffset = 1.5 - (rowIdx * 0.55);
+        const yOffset = 1.6 - (rowIdx * 0.38); // Paso vertical ajustado al nuevo tamaño
 
-        // Geometría de la blade reducida a la mitad de ancho (~1.4)
-        const bladeGeo = new THREE.BoxGeometry(1.4, 0.45, 0.08);
+        // Geometría con altura reducida un 40% (0.45 * 0.6 = 0.27)
+        const bladeGeo = new THREE.BoxGeometry(1.4, 0.27, 0.08);
         
         const bladeMat = new THREE.MeshStandardMaterial({ 
           map: createBladeTexture(device),
