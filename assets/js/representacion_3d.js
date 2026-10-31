@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Subracks con colores únicos por estancia y Leyenda UI
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Etiquetas de Planta grabadas en Racks + Subracks por Estancia
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -154,7 +154,40 @@ async function fetchDevices() {
 }
 
 /**
- * Crea una textura compacta adaptada a la altura reducida
+ * Genera la textura del cartel superior del rack con el nombre de la Planta en letras blancas destacadas
+ */
+function createPlantHeaderTexture(plantName) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 96;
+  const ctx = canvas.getContext('2d');
+
+  // Fondo a juego con el chasis metálico oscuro
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Marco/bisel de la placa superior
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+
+  // Texto impreso/en relieve blanco resplandeciente
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 44px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  // Sombra ligera para dar el efecto de relieve saliente
+  ctx.shadowColor = '#38bdf8';
+  ctx.shadowBlur = 10;
+  ctx.fillText(`PLANTA: ${plantName.toUpperCase()}`, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  return texture;
+}
+
+/**
+ * Crea la textura frontal fotorrealista de cada blade
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
@@ -209,7 +242,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D asignando colores únicos por estancia y generando la leyenda UI
+ * Construye la sala técnica 3D con carteles de planta superiores, subracks por estancias y leyenda UI
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -230,7 +263,7 @@ function buildDataCenterRoom(devices) {
     return acc;
   }, {});
 
-  // Extraer todas las estancias únicas de la base de datos para asignarles colores estables
+  // Extraer todas las estancias únicas
   const allEstancias = [...new Set(devices.map(d => (d.estancia || 'General').toUpperCase()))];
   const estanciaColorMap = {};
   
@@ -238,7 +271,6 @@ function buildDataCenterRoom(devices) {
     estanciaColorMap[est] = ROOM_COLORS[idx % ROOM_COLORS.length];
   });
 
-  // Generar o actualizar la leyenda visual en la esquina superior derecha
   updateLegendUI(estanciaColorMap);
 
   plantConfig.forEach((rowConfig, rowIndex) => {
@@ -268,6 +300,20 @@ function buildDataCenterRoom(devices) {
       rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
 
+      // ==================== ETIQUETA / CORONA SUPERIOR DEL RACK (NOMBRE PLANTA) ====================
+      const headerGeo = new THREE.BoxGeometry(3.3, 0.4, 0.04);
+      const headerMat = new THREE.MeshStandardMaterial({
+        map: createPlantHeaderTexture(rowConfig.name),
+        emissive: 0xffffff,
+        emissiveMap: createPlantHeaderTexture(rowConfig.name),
+        emissiveIntensity: 0.45,
+        roughness: 0.1
+      });
+      const headerMesh = new THREE.Mesh(headerGeo, headerMat);
+      // Ubicado en la coronación frontal del rack (Y: 1.98, Z: zPos + 0.61)
+      headerMesh.position.set(rackCenterX, 1.98, zPos + 0.61);
+      scene.add(headerMesh);
+
       let rackEstancias = [];
       if (rowConfig.racks === 2) {
         rackEstancias = estanciasKeys.filter((_, idx) => idx % 2 === r);
@@ -291,15 +337,14 @@ function buildDataCenterRoom(devices) {
         const endRow = Math.floor(endIndex / 2);
         const numRows = (endRow - startRow) + 1;
 
-        const subrackHeight = (numRows * 0.38) + 0.12;
-        const topRowY = 1.6 - (startRow * 0.38);
-        const bottomRowY = 1.6 - (endRow * 0.38);
-        const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.05;
+        const subrackHeight = (numRows * 0.38) + 0.10;
+        const topRowY = 1.5 - (startRow * 0.38);
+        const bottomRowY = 1.5 - (endRow * 0.38);
+        const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.03;
 
-        // Obtener el color asignado a esta estancia
         const roomColorObj = estanciaColorMap[estanciaName] || ROOM_COLORS[0];
 
-        // Placa de fondo del Subrack con el color específico de la estancia
+        // Placa de fondo del Subrack con color específico por estancia
         const subrackBoxGeo = new THREE.BoxGeometry(3.22, subrackHeight, 0.02);
         const subrackMat = new THREE.MeshStandardMaterial({
           color: roomColorObj.value,
@@ -321,7 +366,7 @@ function buildDataCenterRoom(devices) {
           const rowIdx = Math.floor(absoluteIdx / 2);
 
           const xPos = rackCenterX + (col === 0 ? -0.78 : 0.78);
-          const yOffset = 1.6 - (rowIdx * 0.38);
+          const yOffset = 1.5 - (rowIdx * 0.38);
 
           const bladeGeo = new THREE.BoxGeometry(1.4, 0.27, 0.08);
           const bladeMat = new THREE.MeshStandardMaterial({ 
