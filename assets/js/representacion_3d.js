@@ -13,21 +13,21 @@ let raycaster, mouse;
 const ROOM_COLORS = {
   'COCINA':        { hex: '#f97316', value: 0xf97316 }, // Naranja
   'ASEO':          { hex: '#22c55e', value: 0x22c55e }, // Verde
-  'SALON':         { hex: '#ef4444', value: 0xef4444 }, // Rojo
+  'SALON':         { hex: '#ffff38', value: 0xffff38 }, // Amarillo
   'HALL':          { hex: '#a855f7', value: 0xa855f7 }, // Púrpura
-  'JARDIN':        { hex: '#10b981', value: 0x10b981 }, // Esmeralda
-  'ENTRADA':       { hex: '#06b6d4', value: 0x06b6d4 }, // Cian
-  'GARAJE':        { hex: '#3b82f6', value: 0x3b82f6 }, // Azul
-  'TENDEDERO':     { hex: '#6366f1', value: 0x6366f1 }, // Índigo
-  'HABPPAL':       { hex: '#ec4899', value: 0xec4899 }, // Rosa
-  'BAÑOPPAL':      { hex: '#f43f5e', value: 0xf43f5e }, // Rosado vivo
-  'BANOPPAL':      { hex: '#f43f5e', value: 0xf43f5e }, // Variante sin tilde
+  'JARDIN':        { hex: '#00bfff', value: 0x00bfff }, // DeepSkyBlue
+  'ENTRADA':       { hex: '#c0c0c0', value: 0xc0c0c0 }, // Silver
+  'GARAJE':        { hex: '#3b82f6', value: 0x3b82f6 }, // AzulMedio
+  'TENDEDERO':     { hex: '#ff00ff', value: 0xff00ff }, // Fuchsia
+  'HABPPAL':       { hex: '#0000ff', value: 0x0000ff }, // Azul
+  'BAÑOPPAL':      { hex: '#ff0000', value: 0xff0000 }, // Rojo
+  'BANOPPAL':      { hex: '#ff0000', value: 0xff0000 }, // Variante sin tilde
   'HABDOBLE':      { hex: '#84cc16', value: 0x84cc16 }, // Lima
-  'BAÑO':          { hex: '#14b8a6', value: 0x14b8a6 }, // Teal
-  'BANO':          { hex: '#14b8a6', value: 0x14b8a6 }, // Variante sin tilde
+  'BAÑO':          { hex: '#00ff00', value: 0x00ff00 }, // Lima2
+  'BANO':          { hex: '#00ff00', value: 0x00ff00 }, // Variante sin tilde
   'HABINDIVIDUAL': { hex: '#eab308', value: 0xeab308 }, // Amarillo
-  'BUHARDILLA':    { hex: '#8b5cf6', value: 0x8b5cf6 }, // Violeta
-  'GENERAL':       { hex: '#64748b', value: 0x64748b }  // Por defecto
+  'BUHARDILLA':    { hex: '#8b4513', value: 0x8b4513 }, // SaddleBrown
+  'GENERAL':       { hex: '#fffaf0', value: 0xfffaf0}  // FloralWhite
 };
 
 /**
