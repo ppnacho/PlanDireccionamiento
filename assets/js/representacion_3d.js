@@ -184,23 +184,22 @@ function createPlantHeaderTexture(plantName) {
   canvas.height = 256;
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = '#0f172a';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Fondo transparente para que no se dibuje ningún recuadro o caja
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = '#334155';
-  ctx.lineWidth = 8;
-  ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
-
+  // Texto de la planta limpio y brillante
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 50px monospace';
+  ctx.font = 'bold 55px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
   ctx.shadowColor = '#38bdf8';
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = 14;
   ctx.fillText(plantName.toUpperCase(), canvas.width / 2, canvas.height / 2);
 
-  return new THREE.CanvasTexture(canvas);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+  return texture;
 }
 
 /**
@@ -338,12 +337,9 @@ function buildDataCenterRoom(devices) {
 
       // Etiqueta en la cara superior del rack (Solo nombre de planta)
       const headerGeo = new THREE.PlaneGeometry(3.0, 1.0);
-      const headerMat = new THREE.MeshStandardMaterial({
+      const headerMat = new THREE.MeshBasicMaterial({
         map: createPlantHeaderTexture(rackInfo.name),
-        emissive: 0xffffff,
-        emissiveMap: createPlantHeaderTexture(rackInfo.name),
-        emissiveIntensity: 0.45,
-        roughness: 0.1,
+        transparent: true,
         side: THREE.DoubleSide
       });
       const headerMesh = new THREE.Mesh(headerGeo, headerMat);
