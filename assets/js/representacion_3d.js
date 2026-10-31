@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Borde Perimetral en Subracks
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Subracks Estancos y Pares
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -9,7 +9,7 @@ let scene, camera, renderer, controls;
 let rackMeshes = []; 
 let raycaster, mouse;
 
-// Diccionario maestro definitivo con los colores fijos y exclusivos para cada una de tus 14 estancias oficiales
+// Diccionario maestro definitivo con los colores fijos y exclusivos para cada una de nuestras 14 estancias oficiales
 const ROOM_COLORS = {
   'COCINA':        { hex: '#f97316', value: 0xf97316 }, // Naranja
   'ASEO':          { hex: '#006400', value: 0x006400 }, // DarkGreen
@@ -265,7 +265,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con distribución ordenada, subracks perimetrales y leyenda
+ * Construye la sala técnica 3D con distribución ordenada, subracks estancos (espacio par garantizado) y leyenda
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -382,17 +382,19 @@ function buildDataCenterRoom(devices) {
       const totalRacksForPlant = rackInfo.totalPlantRacks;
       const rackEstancias = estanciasKeys.filter((_, idx) => idx % totalRacksForPlant === rackInfo.rackIndexInPlant);
 
-      let globalDeviceIndex = 0;
+      // Índice de ranuras/slots globales dentro del rack actual
+      let currentGlobalSlotIndex = 0;
 
       rackEstancias.forEach(estanciaName => {
         const estanciaDevices = groupedByEstancia[estanciaName] || [];
         if (estanciaDevices.length === 0) return;
 
-        const startIndex = globalDeviceIndex;
-        estanciaDevices.forEach(() => {
-          globalDeviceIndex++;
-        });
-        const endIndex = globalDeviceIndex - 1;
+        const numDevices = estanciaDevices.length;
+        // Garantizamos que el subrack siempre tenga capacidad para un número par de dispositivos (mínimo 2 slots)
+        const subrackSlots = Math.max(2, Math.ceil(numDevices / 2) * 2);
+
+        const startIndex = currentGlobalSlotIndex;
+        const endIndex = startIndex + subrackSlots - 1;
 
         const startRow = Math.floor(startIndex / 2);
         const endRow = Math.floor(endIndex / 2);
@@ -407,7 +409,7 @@ function buildDataCenterRoom(devices) {
         const roomColorObj = getRoomColor(estanciaName);
         const colorValue = new THREE.Color(roomColorObj.value);
 
-        // Representación del subrack exclusivamente como borde exterior perimetral
+        // Representación del subrack como borde exterior perimetral
         const subrackWidth = 3.22;
         const subrackHalfW = subrackWidth / 2;
         const subrackHalfH = subrackHeight / 2;
@@ -431,6 +433,7 @@ function buildDataCenterRoom(devices) {
         scene.add(subrackMesh);
         rackMeshes.push(subrackMesh);
 
+        // Posicionar cada dispositivo dentro del bloque reservado de este subrack
         estanciaDevices.forEach((device, dIdx) => {
           const absoluteIdx = startIndex + dIdx;
           const col = absoluteIdx % 2; 
@@ -455,6 +458,9 @@ function buildDataCenterRoom(devices) {
           scene.add(bladeMesh);
           rackMeshes.push(bladeMesh);
         });
+
+        // Avanzar el índice global de slots sumando los huecos totales del subrack actual (número par)
+        currentGlobalSlotIndex += subrackSlots;
       });
     });
   });
