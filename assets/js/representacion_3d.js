@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Colores estrictos por estancia sincronizados con Leyenda
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Completa y Consolidada
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -9,31 +9,30 @@ let scene, camera, renderer, controls;
 let rackMeshes = []; 
 let raycaster, mouse;
 
-// Paleta maestra de colores sólidos e inalterables (coincidentes exactamente con la UI/Leyenda)
+// Diccionario maestro con los colores exactos y exclusivos para cada estancia oficial
 const ROOM_COLORS = {
-  'SALON': '#ef4444',      // Rojo
-  'GARAJE': '#3b82f6',     // Azul
-  'ASEO': '#22c55e',       // Verde
-  'BUHARDILLA': '#eab308', // Amarillo
-  'HALL': '#a855f7',       // Púrpura
-  'HABDOBLE': '#ec4899',   // Rosa
-  'BAÑOPPAL': '#06b6d4',   // Cian
-  'COCINA': '#f97316',     // Naranja
-  'DEFAULT': '#6366f1'     // Índigo por defecto
+  'COCINA': '#f97316',        // Naranja
+  'ASEO': '#22c55e',          // Verde
+  'SALON': '#ef4444',         // Rojo
+  'HALL': '#a855f7',          // Púrpura
+  'JARDIN': '#10b981',        // Esmeralda
+  'ENTRADA': '#06b6d4',       // Cian
+  'GARAJE': '#3b82f6',        // Azul
+  'TENDEDERO': '#6366f1',     // Índigo
+  'HABPPAL': '#ec4899',       // Rosa
+  'BAÑOPPAL': '#f43f5e',      // Rosado vivo
+  'HABDOBLE': '#84cc16',      // Lima
+  'BAÑO': '#14b8a6',          // Teal / Verde azulado
+  'HABINDIVIDUAL': '#eab308', // Amarillo
+  'BUHARDILLA': '#8b5cf6',    // Violeta
+  'GENERAL': '#64748b'        // Gris por defecto para sin especificar
 };
 
 function getRoomColorHex(estanciaName) {
-  const upperName = (estanciaName || 'GENERAL').toUpperCase();
-  if (ROOM_COLORS[upperName]) {
-    return ROOM_COLORS[upperName];
-  }
-  const keys = Object.keys(ROOM_COLORS);
-  let hash = 0;
-  for (let i = 0; i < upperName.length; i++) {
-    hash = upperName.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % (keys.length - 1);
-  return ROOM_COLORS[keys[index]] || '#6366f1';
+  if (!estanciaName) return ROOM_COLORS['GENERAL'];
+  // Normalizamos a mayúsculas y limpiamos espacios para garantizar una coincidencia robusta
+  const upperName = estanciaName.toString().trim().toUpperCase();
+  return ROOM_COLORS[upperName] || '#6366f1';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -195,7 +194,7 @@ function createPlantHeaderTexture(plantName) {
 }
 
 /**
- * Crea la textura frontal fotorrealista de cada blade
+ * Crea la textura frontal fotorrealista de cada blade con tipografía legible
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
@@ -250,15 +249,16 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con colores estrictos por estancia sincronizados con la leyenda
+ * Construye la sala técnica 3D con distribución ordenada, subracks por estancias y leyenda
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
   rackMeshes = [];
 
+  // Distribución de filas: Delante (BAJA), Centro (ESCALERA 1 + PRIMERA), Fondo (ESCALERA 2 + BUHARDILLA)
   const rowsConfig = [
     {
-      z: 5.0, // Fila Delantera: BAJA
+      z: 5.0, // Fila Delantera
       racksDef: [
         { name: 'BAJA', rackIndexInPlant: 0, totalPlantRacks: 3 },
         { name: 'BAJA', rackIndexInPlant: 1, totalPlantRacks: 3 },
@@ -266,7 +266,7 @@ function buildDataCenterRoom(devices) {
       ]
     },
     {
-      z: 0.0, // Fila Intermedia: ESCALERA 1 + PRIMERA
+      z: 0.0, // Fila Intermedia
       racksDef: [
         { name: 'ESCALERA 1', rackIndexInPlant: 0, totalPlantRacks: 1 },
         { name: 'PRIMERA', rackIndexInPlant: 0, totalPlantRacks: 3 },
@@ -275,7 +275,7 @@ function buildDataCenterRoom(devices) {
       ]
     },
     {
-      z: -5.0, // Fila del Fondo: ESCALERA 2 + BUHARDILLA
+      z: -5.0, // Fila del Fondo
       racksDef: [
         { name: 'ESCALERA 2', rackIndexInPlant: 0, totalPlantRacks: 1 },
         { name: 'BUHARDILLA', rackIndexInPlant: 0, totalPlantRacks: 3 },
@@ -292,8 +292,8 @@ function buildDataCenterRoom(devices) {
     return acc;
   }, {});
 
-  // Extraer estancias únicas para reflejarlas en la leyenda y colores
-  const allEstancias = [...new Set(devices.map(d => (d.estancia || 'General').toUpperCase()))];
+  // Mapear cada estancia presente al color oficial normalizado
+  const allEstancias = [...new Set(devices.map(d => (d.estancia || 'GENERAL').trim().toUpperCase()))];
   const estanciaColorMap = {};
   
   allEstancias.forEach(est => {
@@ -325,7 +325,7 @@ function buildDataCenterRoom(devices) {
       rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
 
-      // Etiqueta en la cara superior del rack
+      // Etiqueta en la cara superior del rack (Solo nombre de planta)
       const headerGeo = new THREE.PlaneGeometry(3.0, 1.0);
       const headerMat = new THREE.MeshStandardMaterial({
         map: createPlantHeaderTexture(rackInfo.name),
@@ -343,7 +343,7 @@ function buildDataCenterRoom(devices) {
       const plantDevices = groupedByPlant[rackInfo.name] || [];
 
       const groupedByEstancia = plantDevices.reduce((acc, d) => {
-        const est = (d.estancia || 'General').toUpperCase();
+        const est = (d.estancia || 'GENERAL').trim().toUpperCase();
         if (!acc[est]) acc[est] = [];
         acc[est].push(d);
         return acc;
@@ -374,7 +374,7 @@ function buildDataCenterRoom(devices) {
         const bottomRowY = 1.5 - (endRow * 0.38);
         const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.03;
 
-        // Color exacto sincronizado con la leyenda
+        // Color exacto obtenido del catálogo oficial de estancias
         const hexColorStr = estanciaColorMap[estanciaName] || getRoomColorHex(estanciaName);
         const colorValue = new THREE.Color(hexColorStr);
 
