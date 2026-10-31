@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Distribución por filas (Baja: 3, Escaleras: 1, Primera/Buhardilla: 3)
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Colores estrictos por estancia sincronizados con Leyenda
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -9,19 +9,32 @@ let scene, camera, renderer, controls;
 let rackMeshes = []; 
 let raycaster, mouse;
 
-// Paleta de colores brillantes y altamente contrastados para las estancias
-const ROOM_COLORS = [
-  { hex: '#ef4444', value: 0xef4444 }, // Rojo vivo
-  { hex: '#3b82f6', value: 0x3b82f6 }, // Azul eléctrico
-  { hex: '#22c55e', value: 0x22c55e }, // Verde brillante
-  { hex: '#eab308', value: 0xeab308 }, // Amarillo oro
-  { hex: '#a855f7', value: 0xa855f7 }, // Púrpura
-  { hex: '#ec4899', value: 0xec4899 }, // Rosa fucsia
-  { hex: '#06b6d4', value: 0x06b6d4 }, // Cian neón
-  { hex: '#f97316', value: 0xf97316 }, // Naranja brillante
-  { hex: '#10b981', value: 0x10b981 }, // Esmeralda
-  { hex: '#6366f1', value: 0x6366f1 }  // Índigo
-];
+// Paleta maestra de colores sólidos e inalterables (coincidentes exactamente con la UI/Leyenda)
+const ROOM_COLORS = {
+  'SALON': '#ef4444',      // Rojo
+  'GARAJE': '#3b82f6',     // Azul
+  'ASEO': '#22c55e',       // Verde
+  'BUHARDILLA': '#eab308', // Amarillo
+  'HALL': '#a855f7',       // Púrpura
+  'HABDOBLE': '#ec4899',   // Rosa
+  'BAÑOPPAL': '#06b6d4',   // Cian
+  'COCINA': '#f97316',     // Naranja
+  'DEFAULT': '#6366f1'     // Índigo por defecto
+};
+
+function getRoomColorHex(estanciaName) {
+  const upperName = (estanciaName || 'GENERAL').toUpperCase();
+  if (ROOM_COLORS[upperName]) {
+    return ROOM_COLORS[upperName];
+  }
+  const keys = Object.keys(ROOM_COLORS);
+  let hash = 0;
+  for (let i = 0; i < upperName.length; i++) {
+    hash = upperName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % (keys.length - 1);
+  return ROOM_COLORS[keys[index]] || '#6366f1';
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   verifySession();
@@ -237,19 +250,15 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con la nueva distribución de filas y capacidades de racks
+ * Construye la sala técnica 3D con colores estrictos por estancia sincronizados con la leyenda
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
   rackMeshes = [];
 
-  // Definición exacta de filas y distribución de racks por planta
-  // Fila 1: BAJA (3 racks)
-  // Fila 2: ESCALERA 1 (1 rack) + PRIMERA (3 racks)
-  // Fila 3: ESCALERA 2 (1 rack) + BUHARDILLA (3 racks)
   const rowsConfig = [
     {
-      z: 5.0,
+      z: 5.0, // Fila Delantera: BAJA
       racksDef: [
         { name: 'BAJA', rackIndexInPlant: 0, totalPlantRacks: 3 },
         { name: 'BAJA', rackIndexInPlant: 1, totalPlantRacks: 3 },
@@ -257,7 +266,7 @@ function buildDataCenterRoom(devices) {
       ]
     },
     {
-      z: 0.0,
+      z: 0.0, // Fila Intermedia: ESCALERA 1 + PRIMERA
       racksDef: [
         { name: 'ESCALERA 1', rackIndexInPlant: 0, totalPlantRacks: 1 },
         { name: 'PRIMERA', rackIndexInPlant: 0, totalPlantRacks: 3 },
@@ -266,7 +275,7 @@ function buildDataCenterRoom(devices) {
       ]
     },
     {
-      z: -5.0,
+      z: -5.0, // Fila del Fondo: ESCALERA 2 + BUHARDILLA
       racksDef: [
         { name: 'ESCALERA 2', rackIndexInPlant: 0, totalPlantRacks: 1 },
         { name: 'BUHARDILLA', rackIndexInPlant: 0, totalPlantRacks: 3 },
@@ -283,23 +292,21 @@ function buildDataCenterRoom(devices) {
     return acc;
   }, {});
 
-  // Extraer estancias únicas para asignarles colores consistentes
+  // Extraer estancias únicas para reflejarlas en la leyenda y colores
   const allEstancias = [...new Set(devices.map(d => (d.estancia || 'General').toUpperCase()))];
   const estanciaColorMap = {};
   
-  allEstancias.forEach((est, idx) => {
-    estanciaColorMap[est] = ROOM_COLORS[idx % ROOM_COLORS.length];
+  allEstancias.forEach(est => {
+    estanciaColorMap[est] = getRoomColorHex(est);
   });
 
   updateLegendUI(estanciaColorMap);
 
-  rowsConfig.forEach((row, rowIndex) => {
+  rowsConfig.forEach((row) => {
     const zPos = row.z;
-    const numRacksInRow = row.racksDef.length; // 3 para fila 1, 4 para filas 2 y 3
+    const numRacksInRow = row.racksDef.length;
 
     row.racksDef.forEach((rackInfo, r) => {
-      // Calcular posición X centrada en función del número de racks de la fila
-      // Si son 3 racks: -3.8, 0, 3.8. Si son 4 racks: -5.7, -1.9, 1.9, 5.7
       let rackCenterX = 0;
       if (numRacksInRow === 3) {
         rackCenterX = (r - 1) * 3.8;
@@ -318,7 +325,7 @@ function buildDataCenterRoom(devices) {
       rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
 
-      // Etiqueta en la cara superior del rack (Solo nombre de planta)
+      // Etiqueta en la cara superior del rack
       const headerGeo = new THREE.PlaneGeometry(3.0, 1.0);
       const headerMat = new THREE.MeshStandardMaterial({
         map: createPlantHeaderTexture(rackInfo.name),
@@ -333,10 +340,8 @@ function buildDataCenterRoom(devices) {
       headerMesh.position.set(rackCenterX, 2.21, zPos);
       scene.add(headerMesh);
 
-      // Obtener dispositivos de esta planta
       const plantDevices = groupedByPlant[rackInfo.name] || [];
 
-      // Agrupar dispositivos de la planta por estancias
       const groupedByEstancia = plantDevices.reduce((acc, d) => {
         const est = (d.estancia || 'General').toUpperCase();
         if (!acc[est]) acc[est] = [];
@@ -345,9 +350,6 @@ function buildDataCenterRoom(devices) {
       }, {});
 
       const estanciasKeys = Object.keys(groupedByEstancia);
-
-      // Distribuir las estancias entre los racks disponibles para esta planta
-      // Si una planta tiene 3 racks, dividimos sus estancias entre esos 3 racks
       const totalRacksForPlant = rackInfo.totalPlantRacks;
       const rackEstancias = estanciasKeys.filter((_, idx) => idx % totalRacksForPlant === rackInfo.rackIndexInPlant);
 
@@ -372,24 +374,24 @@ function buildDataCenterRoom(devices) {
         const bottomRowY = 1.5 - (endRow * 0.38);
         const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.03;
 
-        const roomColorObj = estanciaColorMap[estanciaName] || ROOM_COLORS[0];
+        // Color exacto sincronizado con la leyenda
+        const hexColorStr = estanciaColorMap[estanciaName] || getRoomColorHex(estanciaName);
+        const colorValue = new THREE.Color(hexColorStr);
 
-        // Placa de fondo del Subrack con color específico de la estancia
         const subrackBoxGeo = new THREE.BoxGeometry(3.22, subrackHeight, 0.02);
         const subrackMat = new THREE.MeshStandardMaterial({
-          color: roomColorObj.value,
-          emissive: roomColorObj.value,
-          emissiveIntensity: 0.7,
-          roughness: 0.1,
+          color: colorValue,
+          emissive: colorValue,
+          emissiveIntensity: 0.35,
+          roughness: 0.2,
           transparent: true,
-          opacity: 0.9
+          opacity: 0.92
         });
         const subrackMesh = new THREE.Mesh(subrackBoxGeo, subrackMat);
         subrackMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.61);
         scene.add(subrackMesh);
         rackMeshes.push(subrackMesh);
 
-        // Renderizar las blades de esta estancia dentro del rack
         estanciaDevices.forEach((device, dIdx) => {
           const absoluteIdx = startIndex + dIdx;
           const col = absoluteIdx % 2; 
@@ -434,11 +436,11 @@ function updateLegendUI(estanciaColorMap) {
   let html = `<p class="font-bold text-blue-400 mb-2.5 pb-1.5 border-b border-slate-800 flex items-center gap-2"><i class="fa-solid fa-layer-group"></i> Leyenda de Estancias</p>`;
   html += `<div class="space-y-1.5 max-h-60 overflow-y-auto pr-1">`;
 
-  for (const [estancia, colorObj] of Object.entries(estanciaColorMap)) {
+  for (const [estancia, hexColor] of Object.entries(estanciaColorMap)) {
     html += `
       <div class="flex items-center justify-between gap-3">
         <span class="text-slate-300 truncate">${estancia}</span>
-        <span class="w-4 h-4 rounded-md shadow-sm shrink-0 border border-white/20" style="background-color: ${colorObj.hex};"></span>
+        <span class="w-4 h-4 rounded-md shadow-sm shrink-0 border border-white/20" style="background-color: ${hexColor};"></span>
       </div>
     `;
   }
