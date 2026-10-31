@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Asignación Dinámica de Colores Únicos por Estancia
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Colores Fijos y Sin Interferencia Lumínica
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -9,27 +9,41 @@ let scene, camera, renderer, controls;
 let rackMeshes = []; 
 let raycaster, mouse;
 
-// Paleta maestra ampliada con colores totalmente diferenciados y sin repeticiones
-const MASTER_PALETTE = [
-  '#f97316', // Naranja
-  '#22c55e', // Verde
-  '#ef4444', // Rojo
-  '#a855f7', // Púrpura
-  '#10b981', // Esmeralda
-  '#06b6d4', // Cian
-  '#3b82f6', // Azul
-  '#6366f1', // Índigo
-  '#ec4899', // Rosa
-  '#f43f5e', // Rosado vivo
-  '#84cc16', // Lima
-  '#14b8a6', // Teal
-  '#eab308', // Amarillo
-  '#8b5cf6', // Violeta
-  '#fb7185', // Coral
-  '#38bdf8', // Celeste
-  '#34d399', // Verde menta
-  '#c084fc'  // Lilo
-];
+// Diccionario maestro definitivo con los colores fijos y exclusivos para cada una de tus 14 estancias oficiales
+const ROOM_COLORS = {
+  'COCINA':        { hex: '#f97316', value: 0xf97316 }, // Naranja
+  'ASEO':          { hex: '#22c55e', value: 0x22c55e }, // Verde
+  'SALON':         { hex: '#ef4444', value: 0xef4444 }, // Rojo
+  'HALL':          { hex: '#a855f7', value: 0xa855f7 }, // Púrpura
+  'JARDIN':        { hex: '#10b981', value: 0x10b981 }, // Esmeralda
+  'ENTRADA':       { hex: '#06b6d4', value: 0x06b6d4 }, // Cian
+  'GARAJE':        { hex: '#3b82f6', value: 0x3b82f6 }, // Azul
+  'TENDEDERO':     { hex: '#6366f1', value: 0x6366f1 }, // Índigo
+  'HABPPAL':       { hex: '#ec4899', value: 0xec4899 }, // Rosa
+  'BAÑOPPAL':      { hex: '#f43f5e', value: 0xf43f5e }, // Rosado vivo
+  'BANOPPAL':      { hex: '#f43f5e', value: 0xf43f5e }, // Variante sin tilde
+  'HABDOBLE':      { hex: '#84cc16', value: 0x84cc16 }, // Lima
+  'BAÑO':          { hex: '#14b8a6', value: 0x14b8a6 }, // Teal
+  'BANO':          { hex: '#14b8a6', value: 0x14b8a6 }, // Variante sin tilde
+  'HABINDIVIDUAL': { hex: '#eab308', value: 0xeab308 }, // Amarillo
+  'BUHARDILLA':    { hex: '#8b5cf6', value: 0x8b5cf6 }, // Violeta
+  'GENERAL':       { hex: '#64748b', value: 0x64748b }  // Por defecto
+};
+
+/**
+ * Normaliza y obtiene el objeto de color exacto para cualquier estancia
+ */
+function getRoomColor(estanciaName) {
+  if (!estanciaName) return ROOM_COLORS['GENERAL'];
+  const normKey = estanciaName.toString()
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]/g, "");
+
+  return ROOM_COLORS[normKey] || { hex: '#6366f1', value: 0x6366f1 };
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   verifySession();
@@ -288,12 +302,13 @@ function buildDataCenterRoom(devices) {
     return acc;
   }, {});
 
-  // Extraer TODAS las estancias únicas reales de la BD, ordenarlas alfabéticamente y asignarles un color exclusivo sin colisiones
-  const allEstancias = [...new Set(devices.map(d => (d.estancia || 'GENERAL').trim().toUpperCase()))].sort((a, b) => a.localeCompare(b));
+  // Recopilar estancias únicas presentes y armar el mapa con colores fijos
+  const activeEstancias = [...new Set(devices.map(d => (d.estancia || 'GENERAL').trim()))].sort((a, b) => a.localeCompare(b));
   const estanciaColorMap = {};
   
-  allEstancias.forEach((est, idx) => {
-    estanciaColorMap[est] = MASTER_PALETTE[idx % MASTER_PALETTE.length];
+  activeEstancias.forEach(est => {
+    const roomObj = getRoomColor(est);
+    estanciaColorMap[est.toUpperCase()] = roomObj.hex;
   });
 
   updateLegendUI(estanciaColorMap);
@@ -339,7 +354,8 @@ function buildDataCenterRoom(devices) {
       const plantDevices = groupedByPlant[rackInfo.name] || [];
 
       const groupedByEstancia = plantDevices.reduce((acc, d) => {
-        const estKey = (d.estancia || 'GENERAL').trim().toUpperCase();
+        const estRaw = (d.estancia || 'GENERAL').trim();
+        const estKey = estRaw.toUpperCase();
         if (!acc[estKey]) acc[estKey] = [];
         acc[estKey].push(d);
         return acc;
@@ -370,19 +386,17 @@ function buildDataCenterRoom(devices) {
         const bottomRowY = 1.5 - (endRow * 0.38);
         const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.03;
 
-        // Color garantizado y único obtenido del mapa de estancias reales
-        const hexColorStr = estanciaColorMap[estanciaName] || '#6366f1';
-        const colorValue = new THREE.Color(hexColorStr);
+        // Obtener el color fijo exacto garantizado para esta estancia
+        const roomColorObj = getRoomColor(estanciaName);
+
+        // Usamos MeshBasicMaterial para que la iluminación azul de la escena no altere ni lave el color real
+        const subrackMat = new THREE.MeshBasicMaterial({
+          color: roomColorObj.value,
+          transparent: true,
+          opacity: 0.95
+        });
 
         const subrackBoxGeo = new THREE.BoxGeometry(3.22, subrackHeight, 0.02);
-        const subrackMat = new THREE.MeshStandardMaterial({
-          color: colorValue,
-          emissive: colorValue,
-          emissiveIntensity: 0.35,
-          roughness: 0.2,
-          transparent: true,
-          opacity: 0.92
-        });
         const subrackMesh = new THREE.Mesh(subrackBoxGeo, subrackMat);
         subrackMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.61);
         scene.add(subrackMesh);
