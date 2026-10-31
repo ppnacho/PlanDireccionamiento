@@ -21,18 +21,48 @@ const ROOM_COLORS = {
   'TENDEDERO': '#6366f1',     // Índigo
   'HABPPAL': '#ec4899',       // Rosa
   'BAÑOPPAL': '#f43f5e',      // Rosado vivo
+  'BANOPPAL': '#f43f5e',      // Variante sin tilde
   'HABDOBLE': '#84cc16',      // Lima
   'BAÑO': '#14b8a6',          // Teal / Verde azulado
+  'BANO': '#14b8a6',          // Variante sin tilde
   'HABINDIVIDUAL': '#eab308', // Amarillo
   'BUHARDILLA': '#8b5cf6',    // Violeta
   'GENERAL': '#64748b'        // Gris por defecto para sin especificar
 };
 
+// Paleta de respaldo ampliada con colores altamente contrastados para estancias no mapeadas
+const EXTRA_FALLBACK_COLORS = [
+  '#38bdf8', '#fb7185', '#34d399', '#f472b6', '#93c5fd', '#818cf8', '#facc15', '#4ade80', '#c084fc'
+];
+
+/**
+ * Normaliza nombres de estancias eliminando tildes, espacios y estandarizando a mayúsculas
+ */
+function normalizeString(str) {
+  if (!str) return 'GENERAL';
+  return str.toString()
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]/g, "");
+}
+
 function getRoomColorHex(estanciaName) {
   if (!estanciaName) return ROOM_COLORS['GENERAL'];
-  // Normalizamos a mayúsculas y limpiamos espacios para garantizar una coincidencia robusta
-  const upperName = estanciaName.toString().trim().toUpperCase();
-  return ROOM_COLORS[upperName] || '#6366f1';
+  const normKey = normalizeString(estanciaName);
+  
+  if (ROOM_COLORS[normKey]) {
+    return ROOM_COLORS[normKey];
+  }
+
+  // Si aparece una estancia nueva no listada, generamos un color determinista y único
+  let hash = 0;
+  for (let i = 0; i < normKey.length; i++) {
+    hash = normKey.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % EXTRA_FALLBACK_COLORS.length;
+  return EXTRA_FALLBACK_COLORS[index];
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -292,12 +322,13 @@ function buildDataCenterRoom(devices) {
     return acc;
   }, {});
 
-  // Mapear cada estancia presente al color oficial normalizado
-  const allEstancias = [...new Set(devices.map(d => (d.estancia || 'GENERAL').trim().toUpperCase()))];
+  // Mapear cada estancia presente al color oficial normalizado de forma limpia
+  const allEstancias = [...new Set(devices.map(d => (d.estancia || 'GENERAL').trim()))];
   const estanciaColorMap = {};
   
   allEstancias.forEach(est => {
-    estanciaColorMap[est] = getRoomColorHex(est);
+    const cleanName = est || 'GENERAL';
+    estanciaColorMap[cleanName.toUpperCase()] = getRoomColorHex(cleanName);
   });
 
   updateLegendUI(estanciaColorMap);
@@ -343,9 +374,10 @@ function buildDataCenterRoom(devices) {
       const plantDevices = groupedByPlant[rackInfo.name] || [];
 
       const groupedByEstancia = plantDevices.reduce((acc, d) => {
-        const est = (d.estancia || 'GENERAL').trim().toUpperCase();
-        if (!acc[est]) acc[est] = [];
-        acc[est].push(d);
+        const estRaw = (d.estancia || 'GENERAL').trim();
+        const estKey = estRaw.toUpperCase();
+        if (!acc[estKey]) acc[estKey] = [];
+        acc[estKey].push(d);
         return acc;
       }, {});
 
