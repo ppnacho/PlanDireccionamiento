@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Blades Realistas y Ajustadas
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) con Textura Fotorealista de Frontal Blade
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -140,7 +140,7 @@ async function fetchDevices() {
 }
 
 /**
- * Crea una textura metálica realista con fuente fina y LEDs limpios
+ * Carga la imagen real del frontal (blade_front.png) y dibuja encima los LEDs y el Hostname
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
@@ -148,40 +148,43 @@ function createBladeTexture(device) {
   canvas.height = 128;
   const ctx = canvas.getContext('2d');
 
-  // Gradiente metálico horizontal para simular chasis de aluminio cepillado
-  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, '#1e293b');
-  gradient.addColorStop(0.5, '#0f172a');
-  gradient.addColorStop(1, '#090d16');
-  ctx.fillStyle = gradient;
+  // Fondo provisional mientras carga la imagen
+  ctx.fillStyle = '#1e293b';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Línea superior de brillo metálico
-  ctx.strokeStyle = '#475569';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
-
-  // LED 1 (Conexión)
-  const isWifi = device.tipo_conexion === 'WIFI';
-  ctx.fillStyle = isWifi ? '#38bdf8' : '#22c55e';
-  ctx.beginPath();
-  ctx.arc(35, 64, 9, 0, Math.PI * 2);
-  ctx.fill();
-
-  // LED 2 (Tipo IP)
-  const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
-  ctx.fillStyle = isStatic ? '#22c55e' : '#f59e0b';
-  ctx.beginPath();
-  ctx.arc(68, 64, 9, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Hostname con fuente fina y elegante (no bold)
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = '28px monospace';
-  const displayName = device.hostname || device.id_hw || 'Nodo Sin ID';
-  ctx.fillText(displayName, 105, 73);
-
   const texture = new THREE.CanvasTexture(canvas);
+
+  // Cargar la imagen real del frontal del servidor
+  const img = new Image();
+  img.src = '../assets/img/blade_front.png';
+  img.onload = () => {
+    // Dibujar la imagen real adaptada al canvas
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // LED 1 (Conexión)
+    const isWifi = device.tipo_conexion === 'WIFI';
+    ctx.fillStyle = isWifi ? '#38bdf8' : '#22c55e';
+    ctx.beginPath();
+    ctx.arc(38, 64, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // LED 2 (Tipo IP)
+    const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
+    ctx.fillStyle = isStatic ? '#22c55e' : '#f59e0b';
+    ctx.beginPath();
+    ctx.arc(62, 64, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hostname con letra fina y elegante sobre el frontal real
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '24px monospace';
+    const displayName = device.hostname || device.id_hw || 'Nodo Sin ID';
+    ctx.fillText(displayName, 105, 71);
+
+    // Notificar a Three.js que la textura del canvas se ha actualizado con la imagen
+    texture.needsUpdate = true;
+  };
+
   return texture;
 }
 
@@ -233,7 +236,6 @@ function buildDataCenterRoom(devices) {
         if (dIndex >= 7) return;
         const yOffset = 1.5 - (dIndex * 0.55);
 
-        // Geometría más delgada (profundidad 0.08) para que sobresalga lo justo
         const bladeGeo = new THREE.BoxGeometry(3.0, 0.45, 0.08);
         
         const bladeMat = new THREE.MeshStandardMaterial({ 
@@ -245,7 +247,6 @@ function buildDataCenterRoom(devices) {
         });
 
         const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
-        // Posicionamiento frontal ajustado (zPos + 0.58) para que no sobresalga en exceso
         bladeMesh.position.set(xPos, yOffset, zPos + 0.58);
         
         bladeMesh.userData = device;
