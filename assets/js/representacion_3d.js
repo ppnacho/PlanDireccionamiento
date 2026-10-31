@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Etiquetas de Planta grabadas en Racks + Subracks por Estancia
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Etiqueta en cara superior del rack (Solo nombre) + Subracks
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -154,33 +154,32 @@ async function fetchDevices() {
 }
 
 /**
- * Genera la textura del cartel superior del rack con el nombre de la Planta en letras blancas destacadas
+ * Genera la textura superior del rack mostrando únicamente el nombre de la planta
  */
 function createPlantHeaderTexture(plantName) {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
-  canvas.height = 96;
+  canvas.height = 256;
   const ctx = canvas.getContext('2d');
 
   // Fondo a juego con el chasis metálico oscuro
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Marco/bisel de la placa superior
+  // Marco de la placa superior
   ctx.strokeStyle = '#334155';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+  ctx.lineWidth = 8;
+  ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
 
-  // Texto impreso/en relieve blanco resplandeciente
+  // Texto blanco centrado exclusivamente con el nombre de la planta
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 44px monospace';
+  ctx.font = 'bold 56px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
-  // Sombra ligera para dar el efecto de relieve saliente
   ctx.shadowColor = '#38bdf8';
-  ctx.shadowBlur = 10;
-  ctx.fillText(`PLANTA: ${plantName.toUpperCase()}`, canvas.width / 2, canvas.height / 2);
+  ctx.shadowBlur = 12;
+  ctx.fillText(plantName.toUpperCase(), canvas.width / 2, canvas.height / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   return texture;
@@ -242,7 +241,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con carteles de planta superiores, subracks por estancias y leyenda UI
+ * Construye la sala técnica 3D con carteles en la cara superior del rack, subracks por estancias y leyenda UI
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -289,7 +288,7 @@ function buildDataCenterRoom(devices) {
     for (let r = 0; r < rowConfig.racks; r++) {
       const rackCenterX = rowConfig.racks === 2 ? (r === 0 ? -2.0 : 2.0) : 0;
 
-      // Chasis del Rack Físico
+      // Chasis del Rack Físico (Altura = 4.4, por lo que su cara superior está en y = 2.2)
       const rackGeo = new THREE.BoxGeometry(3.4, 4.4, 1.2);
       const rackMat = new THREE.MeshStandardMaterial({ 
         color: 0x0f172a, 
@@ -300,18 +299,20 @@ function buildDataCenterRoom(devices) {
       rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
 
-      // ==================== ETIQUETA / CORONA SUPERIOR DEL RACK (NOMBRE PLANTA) ====================
-      const headerGeo = new THREE.BoxGeometry(3.3, 0.4, 0.04);
+      // ==================== ETIQUETA EN LA CARA SUPERIOR DEL RACK ====================
+      const headerGeo = new THREE.PlaneGeometry(3.0, 1.0);
       const headerMat = new THREE.MeshStandardMaterial({
         map: createPlantHeaderTexture(rowConfig.name),
         emissive: 0xffffff,
         emissiveMap: createPlantHeaderTexture(rowConfig.name),
         emissiveIntensity: 0.45,
-        roughness: 0.1
+        roughness: 0.1,
+        side: THREE.DoubleSide
       });
       const headerMesh = new THREE.Mesh(headerGeo, headerMat);
-      // Ubicado en la coronación frontal del rack (Y: 1.98, Z: zPos + 0.61)
-      headerMesh.position.set(rackCenterX, 1.98, zPos + 0.61);
+      // Acostado sobre la cara superior del rack (y = 2.21) rotado -90 grados en X
+      headerMesh.rotation.x = -Math.PI / 2;
+      headerMesh.position.set(rackCenterX, 2.21, zPos);
       scene.add(headerMesh);
 
       let rackEstancias = [];
