@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Etiqueta en cara superior del rack (Solo nombre) + Subracks
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Distribución por filas (Baja: 3, Escaleras: 1, Primera/Buhardilla: 3)
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -61,7 +61,7 @@ function init3DEnvironment() {
   const height = container.clientHeight || (window.innerHeight - 73);
 
   camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 1000);
-  camera.position.set(0, 4, 16);
+  camera.position.set(0, 5, 18);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setSize(width, height);
@@ -74,7 +74,7 @@ function init3DEnvironment() {
   controls.dampingFactor = 0.05;
   controls.maxPolarAngle = Math.PI / 2 - 0.02; 
   controls.minDistance = 3;
-  controls.maxDistance = 40;
+  controls.maxDistance = 45;
 
   // Iluminación general de sala
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
@@ -84,12 +84,12 @@ function init3DEnvironment() {
   dirLight.position.set(10, 30, 20);
   scene.add(dirLight);
 
-  const roomLight = new THREE.PointLight(0x3b82f6, 3, 40);
+  const roomLight = new THREE.PointLight(0x3b82f6, 3, 50);
   roomLight.position.set(0, 10, 0);
   scene.add(roomLight);
 
   // Suelo técnico
-  const floorGeo = new THREE.PlaneGeometry(60, 60);
+  const floorGeo = new THREE.PlaneGeometry(70, 70);
   const floorMat = new THREE.MeshStandardMaterial({ 
     color: 0x0b1329, 
     roughness: 0.7, 
@@ -100,7 +100,7 @@ function init3DEnvironment() {
   floor.position.y = -2.5;
   scene.add(floor);
 
-  const gridHelper = new THREE.GridHelper(60, 40, 0x3b82f6, 0x1e293b);
+  const gridHelper = new THREE.GridHelper(70, 45, 0x3b82f6, 0x1e293b);
   gridHelper.position.y = -2.48;
   scene.add(gridHelper);
 
@@ -154,7 +154,7 @@ async function fetchDevices() {
 }
 
 /**
- * Genera la textura superior del rack mostrando únicamente el nombre de la planta
+ * Genera la textura superior del rack mostrando exclusivamente el nombre de la planta
  */
 function createPlantHeaderTexture(plantName) {
   const canvas = document.createElement('canvas');
@@ -162,18 +162,15 @@ function createPlantHeaderTexture(plantName) {
   canvas.height = 256;
   const ctx = canvas.getContext('2d');
 
-  // Fondo a juego con el chasis metálico oscuro
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Marco de la placa superior
   ctx.strokeStyle = '#334155';
   ctx.lineWidth = 8;
   ctx.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
 
-  // Texto blanco centrado exclusivamente con el nombre de la planta
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 56px monospace';
+  ctx.font = 'bold 50px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
@@ -181,8 +178,7 @@ function createPlantHeaderTexture(plantName) {
   ctx.shadowBlur = 12;
   ctx.fillText(plantName.toUpperCase(), canvas.width / 2, canvas.height / 2);
 
-  const texture = new THREE.CanvasTexture(canvas);
-  return texture;
+  return new THREE.CanvasTexture(canvas);
 }
 
 /**
@@ -241,18 +237,43 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con carteles en la cara superior del rack, subracks por estancias y leyenda UI
+ * Construye la sala técnica 3D con la nueva distribución de filas y capacidades de racks
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
   rackMeshes = [];
 
-  const plantConfig = [
-    { name: 'BAJA', racks: 2 },
-    { name: 'ESCALERA 1', racks: 1 },
-    { name: 'PRIMERA', racks: 2 },
-    { name: 'ESCALERA 2', racks: 1 },
-    { name: 'BUHARDILLA', racks: 2 }
+  // Definición exacta de filas y distribución de racks por planta
+  // Fila 1: BAJA (3 racks)
+  // Fila 2: ESCALERA 1 (1 rack) + PRIMERA (3 racks)
+  // Fila 3: ESCALERA 2 (1 rack) + BUHARDILLA (3 racks)
+  const rowsConfig = [
+    {
+      z: -5.0,
+      racksDef: [
+        { name: 'BAJA', rackIndexInPlant: 0, totalPlantRacks: 3 },
+        { name: 'BAJA', rackIndexInPlant: 1, totalPlantRacks: 3 },
+        { name: 'BAJA', rackIndexInPlant: 2, totalPlantRacks: 3 }
+      ]
+    },
+    {
+      z: 0.0,
+      racksDef: [
+        { name: 'ESCALERA 1', rackIndexInPlant: 0, totalPlantRacks: 1 },
+        { name: 'PRIMERA', rackIndexInPlant: 0, totalPlantRacks: 3 },
+        { name: 'PRIMERA', rackIndexInPlant: 1, totalPlantRacks: 3 },
+        { name: 'PRIMERA', rackIndexInPlant: 2, totalPlantRacks: 3 }
+      ]
+    },
+    {
+      z: 5.0,
+      racksDef: [
+        { name: 'ESCALERA 2', rackIndexInPlant: 0, totalPlantRacks: 1 },
+        { name: 'BUHARDILLA', rackIndexInPlant: 0, totalPlantRacks: 3 },
+        { name: 'BUHARDILLA', rackIndexInPlant: 1, totalPlantRacks: 3 },
+        { name: 'BUHARDILLA', rackIndexInPlant: 2, totalPlantRacks: 3 }
+      ]
+    }
   ];
 
   const groupedByPlant = devices.reduce((acc, d) => {
@@ -262,7 +283,7 @@ function buildDataCenterRoom(devices) {
     return acc;
   }, {});
 
-  // Extraer todas las estancias únicas
+  // Extraer estancias únicas para asignarles colores consistentes
   const allEstancias = [...new Set(devices.map(d => (d.estancia || 'General').toUpperCase()))];
   const estanciaColorMap = {};
   
@@ -272,23 +293,21 @@ function buildDataCenterRoom(devices) {
 
   updateLegendUI(estanciaColorMap);
 
-  plantConfig.forEach((rowConfig, rowIndex) => {
-    const rowDevices = groupedByPlant[rowConfig.name] || [];
-    const zPos = (rowIndex - 2) * 4.5;
+  rowsConfig.forEach((row, rowIndex) => {
+    const zPos = row.z;
+    const numRacksInRow = row.racksDef.length; // 3 para fila 1, 4 para filas 2 y 3
 
-    const groupedByEstancia = rowDevices.reduce((acc, d) => {
-      const est = (d.estancia || 'General').toUpperCase();
-      if (!acc[est]) acc[est] = [];
-      acc[est].push(d);
-      return acc;
-    }, {});
+    row.racksDef.forEach((rackInfo, r) => {
+      // Calcular posición X centrada en función del número de racks de la fila
+      // Si son 3 racks: -3.8, 0, 3.8. Si son 4 racks: -5.7, -1.9, 1.9, 5.7
+      let rackCenterX = 0;
+      if (numRacksInRow === 3) {
+        rackCenterX = (r - 1) * 3.8;
+      } else {
+        rackCenterX = (r - 1.5) * 3.8;
+      }
 
-    const estanciasKeys = Object.keys(groupedByEstancia);
-
-    for (let r = 0; r < rowConfig.racks; r++) {
-      const rackCenterX = rowConfig.racks === 2 ? (r === 0 ? -2.0 : 2.0) : 0;
-
-      // Chasis del Rack Físico (Altura = 4.4, por lo que su cara superior está en y = 2.2)
+      // Chasis del Rack Físico
       const rackGeo = new THREE.BoxGeometry(3.4, 4.4, 1.2);
       const rackMat = new THREE.MeshStandardMaterial({ 
         color: 0x0f172a, 
@@ -299,28 +318,38 @@ function buildDataCenterRoom(devices) {
       rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
 
-      // ==================== ETIQUETA EN LA CARA SUPERIOR DEL RACK ====================
+      // Etiqueta en la cara superior del rack (Solo nombre de planta)
       const headerGeo = new THREE.PlaneGeometry(3.0, 1.0);
       const headerMat = new THREE.MeshStandardMaterial({
-        map: createPlantHeaderTexture(rowConfig.name),
+        map: createPlantHeaderTexture(rackInfo.name),
         emissive: 0xffffff,
-        emissiveMap: createPlantHeaderTexture(rowConfig.name),
+        emissiveMap: createPlantHeaderTexture(rackInfo.name),
         emissiveIntensity: 0.45,
         roughness: 0.1,
         side: THREE.DoubleSide
       });
       const headerMesh = new THREE.Mesh(headerGeo, headerMat);
-      // Acostado sobre la cara superior del rack (y = 2.21) rotado -90 grados en X
       headerMesh.rotation.x = -Math.PI / 2;
       headerMesh.position.set(rackCenterX, 2.21, zPos);
       scene.add(headerMesh);
 
-      let rackEstancias = [];
-      if (rowConfig.racks === 2) {
-        rackEstancias = estanciasKeys.filter((_, idx) => idx % 2 === r);
-      } else {
-        rackEstancias = estanciasKeys;
-      }
+      // Obtener dispositivos de esta planta
+      const plantDevices = groupedByPlant[rackInfo.name] || [];
+
+      // Agrupar dispositivos de la planta por estancias
+      const groupedByEstancia = plantDevices.reduce((acc, d) => {
+        const est = (d.estancia || 'General').toUpperCase();
+        if (!acc[est]) acc[est] = [];
+        acc[est].push(d);
+        return acc;
+      }, {});
+
+      const estanciasKeys = Object.keys(groupedByEstancia);
+
+      // Distribuir las estancias entre los racks disponibles para esta planta
+      // Si una planta tiene 3 racks, dividimos sus estancias entre esos 3 racks
+      const totalRacksForPlant = rackInfo.totalPlantRacks;
+      const rackEstancias = estanciasKeys.filter((_, idx) => idx % totalRacksForPlant === rackInfo.rackIndexInPlant);
 
       let globalDeviceIndex = 0;
 
@@ -345,7 +374,7 @@ function buildDataCenterRoom(devices) {
 
         const roomColorObj = estanciaColorMap[estanciaName] || ROOM_COLORS[0];
 
-        // Placa de fondo del Subrack con color específico por estancia
+        // Placa de fondo del Subrack con color específico de la estancia
         const subrackBoxGeo = new THREE.BoxGeometry(3.22, subrackHeight, 0.02);
         const subrackMat = new THREE.MeshStandardMaterial({
           color: roomColorObj.value,
@@ -360,7 +389,7 @@ function buildDataCenterRoom(devices) {
         scene.add(subrackMesh);
         rackMeshes.push(subrackMesh);
 
-        // Renderizar las blades de esta estancia
+        // Renderizar las blades de esta estancia dentro del rack
         estanciaDevices.forEach((device, dIdx) => {
           const absoluteIdx = startIndex + dIdx;
           const col = absoluteIdx % 2; 
@@ -386,7 +415,7 @@ function buildDataCenterRoom(devices) {
           rackMeshes.push(bladeMesh);
         });
       });
-    }
+    });
   });
 }
 
