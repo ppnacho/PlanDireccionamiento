@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Colores Fijos, Texto Limpio y Rejilla Trasera
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Borde Perimetral en Subracks
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -265,7 +265,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con distribución ordenada, subracks por estancias y leyenda
+ * Construye la sala técnica 3D con distribución ordenada, subracks perimetrales y leyenda
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -403,18 +403,30 @@ function buildDataCenterRoom(devices) {
         const bottomRowY = 1.5 - (endRow * 0.38);
         const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.03;
 
-        // Obtener el color fijo exacto garantizado para esta estancia
+        // Color exacto obtenido del catálogo oficial de estancias
         const roomColorObj = getRoomColor(estanciaName);
+        const colorValue = new THREE.Color(roomColorObj.value);
 
-        // Usamos MeshBasicMaterial para mantener la fidelidad exacta del color respecto a la leyenda
-        const subrackMat = new THREE.MeshBasicMaterial({
-          color: roomColorObj.value,
-          transparent: true,
-          opacity: 0.95
+        // Representación del subrack exclusivamente como borde exterior perimetral
+        const subrackWidth = 3.22;
+        const subrackHalfW = subrackWidth / 2;
+        const subrackHalfH = subrackHeight / 2;
+
+        const borderPoints = [
+          new THREE.Vector3(-subrackHalfW, -subrackHalfH, 0),
+          new THREE.Vector3(subrackHalfW, -subrackHalfH, 0),
+          new THREE.Vector3(subrackHalfW, subrackHalfH, 0),
+          new THREE.Vector3(-subrackHalfW, subrackHalfH, 0),
+          new THREE.Vector3(-subrackHalfW, -subrackHalfH, 0)
+        ];
+
+        const borderGeo = new THREE.BufferGeometry().setFromPoints(borderPoints);
+        const borderMat = new THREE.LineBasicMaterial({
+          color: colorValue,
+          linewidth: 2
         });
 
-        const subrackBoxGeo = new THREE.BoxGeometry(3.22, subrackHeight, 0.02);
-        const subrackMesh = new THREE.Mesh(subrackBoxGeo, subrackMat);
+        const subrackMesh = new THREE.Line(borderGeo, borderMat);
         subrackMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.61);
         scene.add(subrackMesh);
         rackMeshes.push(subrackMesh);
