@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Completa y Consolidada
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Asignación Dinámica de Colores Únicos por Estancia
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -9,61 +9,27 @@ let scene, camera, renderer, controls;
 let rackMeshes = []; 
 let raycaster, mouse;
 
-// Diccionario maestro con los colores exactos y exclusivos para cada estancia oficial
-const ROOM_COLORS = {
-  'COCINA': '#f97316',        // Naranja
-  'ASEO': '#22c55e',          // Verde
-  'SALON': '#ef4444',         // Rojo
-  'HALL': '#a855f7',          // Púrpura
-  'JARDIN': '#10b981',        // Esmeralda
-  'ENTRADA': '#06b6d4',       // Cian
-  'GARAJE': '#3b82f6',        // Azul
-  'TENDEDERO': '#6366f1',     // Índigo
-  'HABPPAL': '#ec4899',       // Rosa
-  'BAÑOPPAL': '#f43f5e',      // Rosado vivo
-  'BANOPPAL': '#f43f5e',      // Variante sin tilde
-  'HABDOBLE': '#84cc16',      // Lima
-  'BAÑO': '#14b8a6',          // Teal / Verde azulado
-  'BANO': '#14b8a6',          // Variante sin tilde
-  'HABINDIVIDUAL': '#eab308', // Amarillo
-  'BUHARDILLA': '#8b5cf6',    // Violeta
-  'GENERAL': '#64748b'        // Gris por defecto para sin especificar
-};
-
-// Paleta de respaldo ampliada con colores altamente contrastados para estancias no mapeadas
-const EXTRA_FALLBACK_COLORS = [
-  '#38bdf8', '#fb7185', '#34d399', '#f472b6', '#93c5fd', '#818cf8', '#facc15', '#4ade80', '#c084fc'
+// Paleta maestra ampliada con colores totalmente diferenciados y sin repeticiones
+const MASTER_PALETTE = [
+  '#f97316', // Naranja
+  '#22c55e', // Verde
+  '#ef4444', // Rojo
+  '#a855f7', // Púrpura
+  '#10b981', // Esmeralda
+  '#06b6d4', // Cian
+  '#3b82f6', // Azul
+  '#6366f1', // Índigo
+  '#ec4899', // Rosa
+  '#f43f5e', // Rosado vivo
+  '#84cc16', // Lima
+  '#14b8a6', // Teal
+  '#eab308', // Amarillo
+  '#8b5cf6', // Violeta
+  '#fb7185', // Coral
+  '#38bdf8', // Celeste
+  '#34d399', // Verde menta
+  '#c084fc'  // Lilo
 ];
-
-/**
- * Normaliza nombres de estancias eliminando tildes, espacios y estandarizando a mayúsculas
- */
-function normalizeString(str) {
-  if (!str) return 'GENERAL';
-  return str.toString()
-    .trim()
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^A-Z0-9]/g, "");
-}
-
-function getRoomColorHex(estanciaName) {
-  if (!estanciaName) return ROOM_COLORS['GENERAL'];
-  const normKey = normalizeString(estanciaName);
-  
-  if (ROOM_COLORS[normKey]) {
-    return ROOM_COLORS[normKey];
-  }
-
-  // Si aparece una estancia nueva no listada, generamos un color determinista y único
-  let hash = 0;
-  for (let i = 0; i < normKey.length; i++) {
-    hash = normKey.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % EXTRA_FALLBACK_COLORS.length;
-  return EXTRA_FALLBACK_COLORS[index];
-}
 
 document.addEventListener('DOMContentLoaded', () => {
   verifySession();
@@ -322,13 +288,12 @@ function buildDataCenterRoom(devices) {
     return acc;
   }, {});
 
-  // Mapear cada estancia presente al color oficial normalizado de forma limpia
-  const allEstancias = [...new Set(devices.map(d => (d.estancia || 'GENERAL').trim()))];
+  // Extraer TODAS las estancias únicas reales de la BD, ordenarlas alfabéticamente y asignarles un color exclusivo sin colisiones
+  const allEstancias = [...new Set(devices.map(d => (d.estancia || 'GENERAL').trim().toUpperCase()))].sort((a, b) => a.localeCompare(b));
   const estanciaColorMap = {};
   
-  allEstancias.forEach(est => {
-    const cleanName = est || 'GENERAL';
-    estanciaColorMap[cleanName.toUpperCase()] = getRoomColorHex(cleanName);
+  allEstancias.forEach((est, idx) => {
+    estanciaColorMap[est] = MASTER_PALETTE[idx % MASTER_PALETTE.length];
   });
 
   updateLegendUI(estanciaColorMap);
@@ -374,8 +339,7 @@ function buildDataCenterRoom(devices) {
       const plantDevices = groupedByPlant[rackInfo.name] || [];
 
       const groupedByEstancia = plantDevices.reduce((acc, d) => {
-        const estRaw = (d.estancia || 'GENERAL').trim();
-        const estKey = estRaw.toUpperCase();
+        const estKey = (d.estancia || 'GENERAL').trim().toUpperCase();
         if (!acc[estKey]) acc[estKey] = [];
         acc[estKey].push(d);
         return acc;
@@ -406,8 +370,8 @@ function buildDataCenterRoom(devices) {
         const bottomRowY = 1.5 - (endRow * 0.38);
         const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.03;
 
-        // Color exacto obtenido del catálogo oficial de estancias
-        const hexColorStr = estanciaColorMap[estanciaName] || getRoomColorHex(estanciaName);
+        // Color garantizado y único obtenido del mapa de estancias reales
+        const hexColorStr = estanciaColorMap[estanciaName] || '#6366f1';
         const colorValue = new THREE.Color(hexColorStr);
 
         const subrackBoxGeo = new THREE.BoxGeometry(3.22, subrackHeight, 0.02);
