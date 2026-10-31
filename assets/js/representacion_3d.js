@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva sin Intercepción de Clics y Subracks Estancos
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Marcos Perimetrales Gruesos y Secuenciales
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -264,7 +264,41 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con distribución ordenada, subracks estancos y leyenda
+ * Crea un marco perimetral 3D con grosor visible e independiente de las limitaciones de línea de WebGL
+ */
+function createSubrackFrameMesh(width, height, thickness, colorValue) {
+  const group = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color: colorValue });
+
+  const halfW = width / 2;
+  const halfH = height / 2;
+
+  // Listón Superior
+  const topGeo = new THREE.BoxGeometry(width, thickness, 0.02);
+  const topMesh = new THREE.Mesh(topGeo, mat);
+  topMesh.position.set(0, halfH - thickness / 2, 0);
+
+  // Listón Inferior
+  const botGeo = new THREE.BoxGeometry(width, thickness, 0.02);
+  const botMesh = new THREE.Mesh(botGeo, mat);
+  botMesh.position.set(0, -halfH + thickness / 2, 0);
+
+  // Listón Izquierdo
+  const leftGeo = new THREE.BoxGeometry(thickness, height - (thickness * 2), 0.02);
+  const leftMesh = new THREE.Mesh(leftGeo, mat);
+  leftMesh.position.set(-halfW + thickness / 2, 0, 0);
+
+  // Listón Derecho
+  const rightGeo = new THREE.BoxGeometry(thickness, height - (thickness * 2), 0.02);
+  const rightMesh = new THREE.Mesh(rightGeo, mat);
+  rightMesh.position.set(halfW - thickness / 2, 0, 0);
+
+  group.add(topMesh, botMesh, leftMesh, rightMesh);
+  return group;
+}
+
+/**
+ * Construye la sala técnica 3D con distribución ordenada, subracks secuenciales y leyenda
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -340,7 +374,6 @@ function buildDataCenterRoom(devices) {
       const rackMesh = new THREE.Mesh(rackGeo, rackMat);
       rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
-      rackMeshes.push(rackMesh);
 
       // Puerta trasera de rejilla metálica
       const backDoorGeo = new THREE.PlaneGeometry(3.38, 4.38);
@@ -381,65 +414,45 @@ function buildDataCenterRoom(devices) {
       const totalRacksForPlant = rackInfo.totalPlantRacks;
       const rackEstancias = estanciasKeys.filter((_, idx) => idx % totalRacksForPlant === rackInfo.rackIndexInPlant);
 
-      // Índice de ranuras/slots globales dentro del rack actual
-      let currentGlobalSlotIndex = 0;
+      // CÁLCULO SECUENCIAL PERFECTO:
+      // Controlamos la posición vertical Y acumulada empezando desde el tope superior usable del rack (Y = 1.68)
+      let currentYTop = 1.68;
+      const rowStepY = 0.38;     // Distancia entre filas de blades
+      const subrackPadding = 0.08; // Margen superior e inferior interno de cada marco
+      const gapBetweenSubracks = 0.08; // Espacio libre entre subracks distintos
 
       rackEstancias.forEach(estanciaName => {
         const estanciaDevices = groupedByEstancia[estanciaName] || [];
         if (estanciaDevices.length === 0) return;
 
         const numDevices = estanciaDevices.length;
-        // Garantizamos capacidad para número par de dispositivos (mínimo 2 slots por subrack)
-        const subrackSlots = Math.max(2, Math.ceil(numDevices / 2) * 2);
+        const numRows = Math.ceil(numDevices / 2); // Número real de filas requeridas
+        const contentHeight = numRows * rowStepY;
+        const totalSubrackHeight = contentHeight + subrackPadding;
 
-        const startIndex = currentGlobalSlotIndex;
-        const endIndex = startIndex + subrackSlots - 1;
-
-        const startRow = Math.floor(startIndex / 2);
-        const endRow = Math.floor(endIndex / 2);
-        const numRows = (endRow - startRow) + 1;
-
-        const subrackHeight = (numRows * 0.38) + 0.12;
-        const topRowY = 1.5 - (startRow * 0.38);
-        const bottomRowY = 1.5 - (endRow * 0.38);
-        const subrackCenterY = (topRowY + bottomRowY) / 2;
+        // El centro del marco del subrack actual
+        const subrackCenterY = currentYTop - (totalSubrackHeight / 2);
 
         // Color exacto obtenido del catálogo oficial de estancias
         const roomColorObj = getRoomColor(estanciaName);
         const colorValue = new THREE.Color(roomColorObj.value);
 
-        // Representación del subrack como borde exterior perimetral
-        const subrackWidth = 3.22;
-        const subrackHalfW = subrackWidth / 2;
-        const subrackHalfH = subrackHeight / 2;
+        // Crear marco 3D perimetral con grosor bien definido (0.04u)
+        const subrackWidth = 3.24;
+        const frameMesh = createSubrackFrameMesh(subrackWidth, totalSubrackHeight, 0.04, colorValue);
+        frameMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.61);
+        scene.add(frameMesh);
+        // NO se añade a rackMeshes para no bloquear clics del raycaster
 
-        const borderPoints = [
-          new THREE.Vector3(-subrackHalfW, -subrackHalfH, 0),
-          new THREE.Vector3(subrackHalfW, -subrackHalfH, 0),
-          new THREE.Vector3(subrackHalfW, subrackHalfH, 0),
-          new THREE.Vector3(-subrackHalfW, subrackHalfH, 0),
-          new THREE.Vector3(-subrackHalfW, -subrackHalfH, 0)
-        ];
+        // Posicionar los dispositivos dentro del subrack actual
+        const firstRowY = currentYTop - (subrackPadding / 2) - (rowStepY / 2);
 
-        const borderGeo = new THREE.BufferGeometry().setFromPoints(borderPoints);
-        const borderMat = new THREE.LineBasicMaterial({
-          color: colorValue,
-          linewidth: 2
-        });
-
-        const subrackMesh = new THREE.Line(borderGeo, borderMat);
-        subrackMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.61);
-        scene.add(subrackMesh);
-        // IMPORTANTE: NO añadimos subrackMesh a rackMeshes para que NUNCA bloquee los clics de los dispositivos
-
-        // Posicionar cada dispositivo dentro del bloque reservado de este subrack
         estanciaDevices.forEach((device, dIdx) => {
-          const absoluteIdx = startIndex + dIdx;
-          const col = absoluteIdx % 2; 
-          const rowIdx = Math.floor(absoluteIdx / 2);
+          const col = dIdx % 2; 
+          const rowIdx = Math.floor(dIdx / 2);
 
           const xPos = rackCenterX + (col === 0 ? -0.78 : 0.78);
-          const yOffset = 1.5 - (rowIdx * 0.38);
+          const yPos = firstRowY - (rowIdx * rowStepY);
 
           const bladeGeo = new THREE.BoxGeometry(1.4, 0.27, 0.08);
           const bladeMat = new THREE.MeshStandardMaterial({ 
@@ -451,15 +464,15 @@ function buildDataCenterRoom(devices) {
           });
 
           const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
-          bladeMesh.position.set(xPos, yOffset, zPos + 0.63);
+          bladeMesh.position.set(xPos, yPos, zPos + 0.63);
           
           bladeMesh.userData = device;
           scene.add(bladeMesh);
           rackMeshes.push(bladeMesh);
         });
 
-        // Avanzar el índice global de slots sumando los huecos totales del subrack actual
-        currentGlobalSlotIndex += subrackSlots;
+        // Actualizar la cota Y superior para el siguiente subrack
+        currentYTop = currentYTop - totalSubrackHeight - gapBetweenSubracks;
       });
     });
   });
