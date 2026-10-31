@@ -12,7 +12,7 @@ let raycaster, mouse;
 // Diccionario maestro definitivo con los colores fijos y exclusivos para cada una de tus 14 estancias oficiales
 const ROOM_COLORS = {
   'COCINA':        { hex: '#f97316', value: 0xf97316 }, // Naranja
-  'ASEO':          { hex: '#22c55e', value: 0x22c55e }, // Verde
+  'ASEO':          { hex: '#006400', value: 0x006400 }, // DarkGreen
   'SALON':         { hex: '#ffff38', value: 0xffff38 }, // Amarillo
   'HALL':          { hex: '#a855f7', value: 0xa855f7 }, // Púrpura
   'JARDIN':        { hex: '#00bfff', value: 0x00bfff }, // DeepSkyBlue
