@@ -262,32 +262,31 @@ function buildDataCenterRoom(devices) {
         });
         const endIndex = globalDeviceIndex - 1;
 
-        // Calcular la posición y altura del subrack amarillo en función de las filas que ocupa
         const startRow = Math.floor(startIndex / 2);
         const endRow = Math.floor(endIndex / 2);
         const numRows = (endRow - startRow) + 1;
 
-        const subrackHeight = (numRows * 0.38) + 0.1;
+        const subrackHeight = (numRows * 0.38) + 0.12;
         const topRowY = 1.6 - (startRow * 0.38);
         const bottomRowY = 1.6 - (endRow * 0.38);
         const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.05;
 
-        // Dibujar el marco o contenedor del Subrack en color amarillo brillante
-        const subrackBoxGeo = new THREE.BoxGeometry(3.18, subrackHeight, 0.02);
+        // Placa de fondo del Subrack posicionada por FUERA de la cara frontal del rack (zPos + 0.61)
+        const subrackBoxGeo = new THREE.BoxGeometry(3.22, subrackHeight, 0.02);
         const subrackMat = new THREE.MeshStandardMaterial({
-          color: 0xeab308, // Amarillo brillante (Tailwind yellow-500)
+          color: 0xeab308, // Amarillo brillante
           emissive: 0xeab308,
-          emissiveIntensity: 0.6,
+          emissiveIntensity: 0.7,
           roughness: 0.1,
           transparent: true,
-          opacity: 0.85 // Ligeramente translúcido para que destaque como panel técnico
+          opacity: 0.9
         });
         const subrackMesh = new THREE.Mesh(subrackBoxGeo, subrackMat);
-        subrackMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.53);
+        subrackMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.61);
         scene.add(subrackMesh);
         rackMeshes.push(subrackMesh);
 
-        // Renderizar las blades de esta estancia dentro de su espacio asignado
+        // Renderizar las blades de esta estancia justo delante de la placa amarilla (zPos + 0.63)
         estanciaDevices.forEach((device, dIdx) => {
           const absoluteIdx = startIndex + dIdx;
           const col = absoluteIdx % 2; 
@@ -306,7 +305,7 @@ function buildDataCenterRoom(devices) {
           });
 
           const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
-          bladeMesh.position.set(xPos, yOffset, zPos + 0.58);
+          bladeMesh.position.set(xPos, yOffset, zPos + 0.63);
           
           bladeMesh.userData = device;
           scene.add(bladeMesh);
