@@ -15,7 +15,7 @@ const ROOM_COLORS = {
   'ASEO':          { hex: '#006400', value: 0x006400 }, // DarkGreen
   'SALON':         { hex: '#ffff38', value: 0xffff38 }, // Amarillo
   'HALL':          { hex: '#a855f7', value: 0xa855f7 }, // Púrpura
-  'JARDIN':        { hex: '#00bfff', value: 0x00bfff }, // DeepSkyBlue
+  'JARDIN':        { hex: '#00ffff', value: 0x00ffff }, // Aqua
   'ENTRADA':       { hex: '#c0c0c0', value: 0xc0c0c0 }, // Silver
   'GARAJE':        { hex: '#3b82f6', value: 0x3b82f6 }, // AzulMedio
   'TENDEDERO':     { hex: '#ff00ff', value: 0xff00ff }, // Fuchsia
