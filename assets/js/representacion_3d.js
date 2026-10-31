@@ -273,16 +273,17 @@ function buildDataCenterRoom(devices) {
         const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.05;
 
         // Dibujar el marco o contenedor del Subrack en color amarillo brillante
-        const subrackBoxGeo = new THREE.BoxGeometry(3.15, subrackHeight, 0.04);
+        const subrackBoxGeo = new THREE.BoxGeometry(3.18, subrackHeight, 0.02);
         const subrackMat = new THREE.MeshStandardMaterial({
           color: 0xeab308, // Amarillo brillante (Tailwind yellow-500)
           emissive: 0xeab308,
-          emissiveIntensity: 0.4,
-          roughness: 0.2,
-          wireframe: true // Crea un efecto de rejilla/borde tecnológico muy limpio
+          emissiveIntensity: 0.6,
+          roughness: 0.1,
+          transparent: true,
+          opacity: 0.85 // Ligeramente translúcido para que destaque como panel técnico
         });
         const subrackMesh = new THREE.Mesh(subrackBoxGeo, subrackMat);
-        subrackMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.54);
+        subrackMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.53);
         scene.add(subrackMesh);
         rackMeshes.push(subrackMesh);
 
