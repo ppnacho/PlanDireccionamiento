@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Colores Fijos y Sin Interferencia Lumínica
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Colores Fijos, Texto Limpio y Rejilla Trasera
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -27,8 +27,16 @@ const ROOM_COLORS = {
   'BANO':          { hex: '#00ff00', value: 0x00ff00 }, // Variante sin tilde
   'HABINDIVIDUAL': { hex: '#eab308', value: 0xeab308 }, // Amarillo
   'BUHARDILLA':    { hex: '#8b4513', value: 0x8b4513 }, // SaddleBrown
-  'GENERAL':       { hex: '#fffaf0', value: 0xfffaf0}  // FloralWhite
+  'GENERAL':       { hex: '#fffaf0', value: 0xfffaf0 }  // FloralWhite
 };
+
+// Cargador de texturas para la rejilla trasera del rack
+const textureLoader = new THREE.TextureLoader();
+const rackMeshTexture = textureLoader.load('../assets/img/rack_mesh.png', (texture) => {
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(3, 4);
+});
 
 /**
  * Normaliza y obtiene el objeto de color exacto para cualquier estancia
@@ -176,7 +184,7 @@ async function fetchDevices() {
 }
 
 /**
- * Genera la textura superior del rack mostrando exclusivamente el nombre de la planta
+ * Genera la textura superior del rack mostrando exclusivamente el texto limpio de la planta (sin recuadros)
  */
 function createPlantHeaderTexture(plantName) {
   const canvas = document.createElement('canvas');
@@ -184,10 +192,9 @@ function createPlantHeaderTexture(plantName) {
   canvas.height = 256;
   const ctx = canvas.getContext('2d');
 
-  // Fondo transparente para que no se dibuje ningún recuadro o caja
+  // Fondo transparente para eliminar cualquier caja o borde
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Texto de la planta limpio y brillante
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 55px monospace';
   ctx.textAlign = 'center';
@@ -334,8 +341,22 @@ function buildDataCenterRoom(devices) {
       const rackMesh = new THREE.Mesh(rackGeo, rackMat);
       rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
+      rackMeshes.push(rackMesh);
 
-      // Etiqueta en la cara superior del rack (Solo nombre de planta)
+      // Puerta trasera de rejilla metálica
+      const backDoorGeo = new THREE.PlaneGeometry(3.38, 4.38);
+      const backDoorMat = new THREE.MeshBasicMaterial({
+        map: rackMeshTexture,
+        transparent: true,
+        opacity: 0.85,
+        side: THREE.DoubleSide
+      });
+      const backDoor = new THREE.Mesh(backDoorGeo, backDoorMat);
+      backDoor.position.set(rackCenterX, 0, zPos - 0.61);
+      backDoor.rotation.y = Math.PI;
+      scene.add(backDoor);
+
+      // Etiqueta superior del rack (Texto limpio flotante sin recuadros)
       const headerGeo = new THREE.PlaneGeometry(3.0, 1.0);
       const headerMat = new THREE.MeshBasicMaterial({
         map: createPlantHeaderTexture(rackInfo.name),
@@ -385,7 +406,7 @@ function buildDataCenterRoom(devices) {
         // Obtener el color fijo exacto garantizado para esta estancia
         const roomColorObj = getRoomColor(estanciaName);
 
-        // Usamos MeshBasicMaterial para que la iluminación azul de la escena no altere ni lave el color real
+        // Usamos MeshBasicMaterial para mantener la fidelidad exacta del color respecto a la leyenda
         const subrackMat = new THREE.MeshBasicMaterial({
           color: roomColorObj.value,
           transparent: true,
