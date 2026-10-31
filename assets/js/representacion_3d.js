@@ -249,7 +249,7 @@ function buildDataCenterRoom(devices) {
   // Fila 3: ESCALERA 2 (1 rack) + BUHARDILLA (3 racks)
   const rowsConfig = [
     {
-      z: -5.0,
+      z: 5.0,
       racksDef: [
         { name: 'BAJA', rackIndexInPlant: 0, totalPlantRacks: 3 },
         { name: 'BAJA', rackIndexInPlant: 1, totalPlantRacks: 3 },
@@ -266,7 +266,7 @@ function buildDataCenterRoom(devices) {
       ]
     },
     {
-      z: 5.0,
+      z: -5.0,
       racksDef: [
         { name: 'ESCALERA 2', rackIndexInPlant: 0, totalPlantRacks: 1 },
         { name: 'BUHARDILLA', rackIndexInPlant: 0, totalPlantRacks: 3 },
