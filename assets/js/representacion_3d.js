@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Distribución única por estancias (Sin duplicados)
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Subracks delimitados por estancias (Borde Amarillo)
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -195,7 +195,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica agrupando dispositivos por estancias ordenadas sin duplicados
+ * Construye la sala técnica 3D con subracks delimitados por un marco amarillo
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -220,7 +220,6 @@ function buildDataCenterRoom(devices) {
     const rowDevices = groupedByPlant[rowConfig.name] || [];
     const zPos = (rowIndex - 2) * 4.5;
 
-    // Agrupar los dispositivos de esta planta por estancias para estructurar subracks
     const groupedByEstancia = rowDevices.reduce((acc, d) => {
       const est = (d.estancia || 'General').toUpperCase();
       if (!acc[est]) acc[est] = [];
@@ -244,7 +243,6 @@ function buildDataCenterRoom(devices) {
       rackMesh.position.set(rackCenterX, 0, zPos);
       scene.add(rackMesh);
 
-      // Asignar estancias específicas a este rack si hay 2 racks, o todas si hay 1
       let rackEstancias = [];
       if (rowConfig.racks === 2) {
         rackEstancias = estanciasKeys.filter((_, idx) => idx % 2 === r);
@@ -256,18 +254,48 @@ function buildDataCenterRoom(devices) {
 
       rackEstancias.forEach(estanciaName => {
         const estanciaDevices = groupedByEstancia[estanciaName] || [];
+        if (estanciaDevices.length === 0) return;
 
-        estanciaDevices.forEach((device) => {
-          if (globalDeviceIndex >= 18) return;
+        const startIndex = globalDeviceIndex;
+        estanciaDevices.forEach(() => {
+          globalDeviceIndex++;
+        });
+        const endIndex = globalDeviceIndex - 1;
 
-          const col = globalDeviceIndex % 2; 
-          const rowIdx = Math.floor(globalDeviceIndex / 2);
+        // Calcular la posición y altura del subrack amarillo en función de las filas que ocupa
+        const startRow = Math.floor(startIndex / 2);
+        const endRow = Math.floor(endIndex / 2);
+        const numRows = (endRow - startRow) + 1;
+
+        const subrackHeight = (numRows * 0.38) + 0.1;
+        const topRowY = 1.6 - (startRow * 0.38);
+        const bottomRowY = 1.6 - (endRow * 0.38);
+        const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.05;
+
+        // Dibujar el marco o contenedor del Subrack en color amarillo brillante
+        const subrackBoxGeo = new THREE.BoxGeometry(3.15, subrackHeight, 0.04);
+        const subrackMat = new THREE.MeshStandardMaterial({
+          color: 0xeab308, // Amarillo brillante (Tailwind yellow-500)
+          emissive: 0xeab308,
+          emissiveIntensity: 0.4,
+          roughness: 0.2,
+          wireframe: true // Crea un efecto de rejilla/borde tecnológico muy limpio
+        });
+        const subrackMesh = new THREE.Mesh(subrackBoxGeo, subrackMat);
+        subrackMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.54);
+        scene.add(subrackMesh);
+        rackMeshes.push(subrackMesh);
+
+        // Renderizar las blades de esta estancia dentro de su espacio asignado
+        estanciaDevices.forEach((device, dIdx) => {
+          const absoluteIdx = startIndex + dIdx;
+          const col = absoluteIdx % 2; 
+          const rowIdx = Math.floor(absoluteIdx / 2);
 
           const xPos = rackCenterX + (col === 0 ? -0.78 : 0.78);
           const yOffset = 1.6 - (rowIdx * 0.38);
 
           const bladeGeo = new THREE.BoxGeometry(1.4, 0.27, 0.08);
-          
           const bladeMat = new THREE.MeshStandardMaterial({ 
             map: createBladeTexture(device),
             emissive: 0xffffff,
@@ -282,8 +310,6 @@ function buildDataCenterRoom(devices) {
           bladeMesh.userData = device;
           scene.add(bladeMesh);
           rackMeshes.push(bladeMesh);
-
-          globalDeviceIndex++;
         });
       });
     }
@@ -360,5 +386,5 @@ window.openBladeModal = function(device) {
 };
 
 window.closeModal = function() {
-  document.getElementById('blade-modal').classList.add('hidden');
+  document.getElementById('blade-modal'].classList.add('hidden');
 };
