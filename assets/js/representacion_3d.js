@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Subracks delimitados por estancias (Borde Amarillo)
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Subracks con colores únicos por estancia y Leyenda UI
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -8,6 +8,20 @@ let allDevices = [];
 let scene, camera, renderer, controls;
 let rackMeshes = []; 
 let raycaster, mouse;
+
+// Paleta de colores brillantes y altamente contrastados para las estancias
+const ROOM_COLORS = [
+  { hex: '#ef4444', value: 0xef4444 }, // Rojo vivo
+  { hex: '#3b82f6', value: 0x3b82f6 }, // Azul eléctrico
+  { hex: '#22c55e', value: 0x22c55e }, // Verde brillante
+  { hex: '#eab308', value: 0xeab308 }, // Amarillo oro
+  { hex: '#a855f7', value: 0xa855f7 }, // Púrpura
+  { hex: '#ec4899', value: 0xec4899 }, // Rosa fucsia
+  { hex: '#06b6d4', value: 0x06b6d4 }, // Cian neón
+  { hex: '#f97316', value: 0xf97316 }, // Naranja brillante
+  { hex: '#10b981', value: 0x10b981 }, // Esmeralda
+  { hex: '#6366f1', value: 0x6366f1 }  // Índigo
+];
 
 document.addEventListener('DOMContentLoaded', () => {
   verifySession();
@@ -195,7 +209,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Construye la sala técnica 3D con subracks delimitados por un marco amarillo
+ * Construye la sala técnica 3D asignando colores únicos por estancia y generando la leyenda UI
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -215,6 +229,17 @@ function buildDataCenterRoom(devices) {
     acc[planta].push(d);
     return acc;
   }, {});
+
+  // Extraer todas las estancias únicas de la base de datos para asignarles colores estables
+  const allEstancias = [...new Set(devices.map(d => (d.estancia || 'General').toUpperCase()))];
+  const estanciaColorMap = {};
+  
+  allEstancias.forEach((est, idx) => {
+    estanciaColorMap[est] = ROOM_COLORS[idx % ROOM_COLORS.length];
+  });
+
+  // Generar o actualizar la leyenda visual en la esquina superior derecha
+  updateLegendUI(estanciaColorMap);
 
   plantConfig.forEach((rowConfig, rowIndex) => {
     const rowDevices = groupedByPlant[rowConfig.name] || [];
@@ -271,11 +296,14 @@ function buildDataCenterRoom(devices) {
         const bottomRowY = 1.6 - (endRow * 0.38);
         const subrackCenterY = (topRowY + bottomRowY) / 2 + 0.05;
 
-        // Placa de fondo del Subrack posicionada por FUERA de la cara frontal del rack (zPos + 0.61)
+        // Obtener el color asignado a esta estancia
+        const roomColorObj = estanciaColorMap[estanciaName] || ROOM_COLORS[0];
+
+        // Placa de fondo del Subrack con el color específico de la estancia
         const subrackBoxGeo = new THREE.BoxGeometry(3.22, subrackHeight, 0.02);
         const subrackMat = new THREE.MeshStandardMaterial({
-          color: 0xeab308, // Amarillo brillante
-          emissive: 0xeab308,
+          color: roomColorObj.value,
+          emissive: roomColorObj.value,
           emissiveIntensity: 0.7,
           roughness: 0.1,
           transparent: true,
@@ -286,7 +314,7 @@ function buildDataCenterRoom(devices) {
         scene.add(subrackMesh);
         rackMeshes.push(subrackMesh);
 
-        // Renderizar las blades de esta estancia justo delante de la placa amarilla (zPos + 0.63)
+        // Renderizar las blades de esta estancia
         estanciaDevices.forEach((device, dIdx) => {
           const absoluteIdx = startIndex + dIdx;
           const col = absoluteIdx % 2; 
@@ -314,6 +342,34 @@ function buildDataCenterRoom(devices) {
       });
     }
   });
+}
+
+/**
+ * Crea o actualiza la caja de leyenda flotante en la esquina superior derecha
+ */
+function updateLegendUI(estanciaColorMap) {
+  let legendEl = document.getElementById('room-legend-box');
+  if (!legendEl) {
+    legendEl = document.createElement('div');
+    legendEl.id = 'room-legend-box';
+    legendEl.className = 'absolute top-20 right-6 z-30 bg-slate-900/90 backdrop-blur-md p-3.5 rounded-xl border border-slate-700/80 shadow-2xl text-xs font-mono text-slate-200 max-w-xs';
+    document.body.appendChild(legendEl);
+  }
+
+  let html = `<p class="font-bold text-blue-400 mb-2.5 pb-1.5 border-b border-slate-800 flex items-center gap-2"><i class="fa-solid fa-layer-group"></i> Leyenda de Estancias</p>`;
+  html += `<div class="space-y-1.5 max-h-60 overflow-y-auto pr-1">`;
+
+  for (const [estancia, colorObj] of Object.entries(estanciaColorMap)) {
+    html += `
+      <div class="flex items-center justify-between gap-3">
+        <span class="text-slate-300 truncate">${estancia}</span>
+        <span class="w-4 h-4 rounded-md shadow-sm shrink-0 border border-white/20" style="background-color: ${colorObj.hex};"></span>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  legendEl.innerHTML = html;
 }
 
 function onCanvasClick(event) {
