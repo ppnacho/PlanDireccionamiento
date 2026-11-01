@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con LEDs 3D Independientes y Parpadeo (500ms)
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con LEDs Independientes Asíncronos (150ms)
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -146,14 +146,14 @@ function animate() {
   requestAnimationFrame(animate);
   if (controls) controls.update();
 
-  // Efecto de parpadeo exclusivo para los LEDs (cadencia de 500ms)
   const time = performance.now();
-  const blink = Math.floor(time / 500) % 2;
 
   scene.traverse((child) => {
-    // Si es un objeto LED independiente, alternamos su visibilidad o intensidad
+    // Si es un objeto LED, aplicamos un ciclo independiente basado en su propio desfase (150ms de cadencia)
     if (child.isMesh && child.userData && child.userData.isLed === true) {
-      child.visible = (blink === 0); // Aparece y desaparece cada 500ms
+      const offsetTime = time + child.userData.randomOffset;
+      const blink = Math.floor(offsetTime / 150) % 2;
+      child.visible = (blink === 0);
     }
   });
 
@@ -221,7 +221,7 @@ function createPlantHeaderTexture(plantName) {
 }
 
 /**
- * Crea la textura frontal fotorrealista de cada blade (solo la chapa y el texto, sin pintar los LEDs fijos en el canvas)
+ * Crea la textura frontal fotorrealista de cada blade (solo la chapa y el texto)
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
@@ -452,24 +452,27 @@ function buildDataCenterRoom(devices) {
           scene.add(bladeMesh);
           rackMeshes.push(bladeMesh);
 
-          // --- CREACIÓN DE LOS LEDS 3D INDEPENDIENTES PARA EL PARPADEO ---
+          // --- LED 1 (Conexión) con desfase aleatorio independiente ---
           const ledGeo = new THREE.SphereGeometry(0.035, 8, 8);
-
-          // LED 1 (Conexión: Wifi = Cian, Cable = Verde)
           const isWifi = device.tipo_conexion === 'WIFI';
           const led1Mat = new THREE.MeshBasicMaterial({ color: isWifi ? 0x00ffff : 0x00ff00 });
           const led1Mesh = new THREE.Mesh(ledGeo, led1Mat);
-          // Coordenadas relativas en el frontal de la blade
           led1Mesh.position.set(xPos - 0.55, yPos, zPos + 0.68);
-          led1Mesh.userData = { isLed: true }; // Marcador para que el bucle animate los controle
+          led1Mesh.userData = { 
+            isLed: true, 
+            randomOffset: Math.random() * 2000 // Desfase aleatorio único en milisegundos
+          };
           scene.add(led1Mesh);
 
-          // LED 2 (Tipo IP: Estática = Rojo, Dinámica/Otro = Naranja)
+          // --- LED 2 (Tipo IP) con desfase aleatorio independiente ---
           const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
           const led2Mat = new THREE.MeshBasicMaterial({ color: isStatic ? 0xff0000 : 0xffa500 });
           const led2Mesh = new THREE.Mesh(ledGeo, led2Mat);
           led2Mesh.position.set(xPos - 0.46, yPos, zPos + 0.68);
-          led2Mesh.userData = { isLed: true };
+          led2Mesh.userData = { 
+            isLed: true, 
+            randomOffset: Math.random() * 2000 
+          };
           scene.add(led2Mesh);
         });
 
