@@ -104,8 +104,10 @@ function init3DEnvironment() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.maxPolarAngle = Math.PI / 2 - 0.02; 
-  controls.minDistance = 2;   // Permite acercarse mucho más al detalle de cualquier blade
-  controls.maxDistance = 60;  // Ampliamente aumentado (antes 45) para llegar cómodamente a la tercera fila y más allá
+  controls.minDistance = 0.5; // Muy cerca, casi tocando los dispositivos
+  controls.maxDistance = 60;  // Para ver toda la sala desde lejos
+  controls.enablePan = true;  // Permite desplazar el centro de la cámara libremente
+  controls.panSpeed = 1.0;    // Velocidad de desplazamiento fluido
 
   // Iluminación general de sala
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
