@@ -229,14 +229,14 @@ function createBladeTexture(device) {
 
     // LED 1 (Conexión)
     const isWifi = device.tipo_conexion === 'WIFI';
-    ctx.fillStyle = isWifi ? '#38bdf8' : '#22c55e';
+    ctx.fillStyle = isWifi ? '#00ffff' : '#00ff00';
     ctx.beginPath();
     ctx.arc(22, 40, 4.5, 0, Math.PI * 2);
     ctx.fill();
 
     // LED 2 (Tipo IP)
     const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
-    ctx.fillStyle = isStatic ? '#22c55e' : '#f59e0b';
+    ctx.fillStyle = isStatic ? '#ff0000' : '#ffa500';
     ctx.beginPath();
     ctx.arc(38, 40, 4.5, 0, Math.PI * 2);
     ctx.fill();
