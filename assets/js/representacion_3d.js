@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Marcos Perimetrales Gruesos y Secuenciales
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Parpadeo LED (500ms)
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -145,6 +145,19 @@ function init3DEnvironment() {
 function animate() {
   requestAnimationFrame(animate);
   if (controls) controls.update();
+
+  // Efecto de parpadeo dinámico de los LED (cadencia de 500ms)
+  const time = performance.now();
+  const blink = Math.floor(time / 500) % 2;
+
+  scene.traverse((child) => {
+    if (child.isMesh && child.userData && child.userData.id_hw) {
+      if (child.material && child.material.emissiveIntensity !== undefined) {
+        child.material.emissiveIntensity = (blink === 0) ? 0.6 : 0.1;
+      }
+    }
+  });
+
   if (renderer && scene && camera) {
     renderer.render(scene, camera);
   }
