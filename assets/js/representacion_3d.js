@@ -1,5 +1,5 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con Parpadeo LED (500ms)
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con LEDs 3D Independientes y Parpadeo (500ms)
  * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
  */
 import { supabase } from './supabaseClient.js';
@@ -146,15 +146,14 @@ function animate() {
   requestAnimationFrame(animate);
   if (controls) controls.update();
 
-  // Efecto de parpadeo dinámico de los LED (cadencia de 500ms)
+  // Efecto de parpadeo exclusivo para los LEDs (cadencia de 500ms)
   const time = performance.now();
   const blink = Math.floor(time / 500) % 2;
 
   scene.traverse((child) => {
-    if (child.isMesh && child.userData && child.userData.id_hw) {
-      if (child.material && child.material.emissiveIntensity !== undefined) {
-        child.material.emissiveIntensity = (blink === 0) ? 0.6 : 0.1;
-      }
+    // Si es un objeto LED independiente, alternamos su visibilidad o intensidad
+    if (child.isMesh && child.userData && child.userData.isLed === true) {
+      child.visible = (blink === 0); // Aparece y desaparece cada 500ms
     }
   });
 
@@ -222,7 +221,7 @@ function createPlantHeaderTexture(plantName) {
 }
 
 /**
- * Crea la textura frontal fotorrealista de cada blade con tipografía legible
+ * Crea la textura frontal fotorrealista de cada blade (solo la chapa y el texto, sin pintar los LEDs fijos en el canvas)
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
@@ -239,20 +238,6 @@ function createBladeTexture(device) {
   img.src = '../assets/img/blade_front.png';
   img.onload = () => {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    // LED 1 (Conexión)
-    const isWifi = device.tipo_conexion === 'WIFI';
-    ctx.fillStyle = isWifi ? '#00ffff' : '#00ff00';
-    ctx.beginPath();
-    ctx.arc(22, 40, 4.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // LED 2 (Tipo IP)
-    const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
-    ctx.fillStyle = isStatic ? '#ff0000' : '#ffa500';
-    ctx.beginPath();
-    ctx.arc(38, 40, 4.5, 0, Math.PI * 2);
-    ctx.fill();
 
     // Recuadro de fondo gris con esquinas redondeadas
     ctx.fillStyle = '#cbd5e1'; 
@@ -277,7 +262,7 @@ function createBladeTexture(device) {
 }
 
 /**
- * Crea un marco perimetral 3D con grosor visible e independiente de las limitaciones de línea de WebGL
+ * Crea un marco perimetral 3D con grosor visible
  */
 function createSubrackFrameMesh(width, height, thickness, colorValue) {
   const group = new THREE.Group();
@@ -286,22 +271,18 @@ function createSubrackFrameMesh(width, height, thickness, colorValue) {
   const halfW = width / 2;
   const halfH = height / 2;
 
-  // Listón Superior
   const topGeo = new THREE.BoxGeometry(width, thickness, 0.02);
   const topMesh = new THREE.Mesh(topGeo, mat);
   topMesh.position.set(0, halfH - thickness / 2, 0);
 
-  // Listón Inferior
   const botGeo = new THREE.BoxGeometry(width, thickness, 0.02);
   const botMesh = new THREE.Mesh(botGeo, mat);
   botMesh.position.set(0, -halfH + thickness / 2, 0);
 
-  // Listón Izquierdo
   const leftGeo = new THREE.BoxGeometry(thickness, height - (thickness * 2), 0.02);
   const leftMesh = new THREE.Mesh(leftGeo, mat);
   leftMesh.position.set(-halfW + thickness / 2, 0, 0);
 
-  // Listón Derecho
   const rightGeo = new THREE.BoxGeometry(thickness, height - (thickness * 2), 0.02);
   const rightMesh = new THREE.Mesh(rightGeo, mat);
   rightMesh.position.set(halfW - thickness / 2, 0, 0);
@@ -317,10 +298,9 @@ function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
   rackMeshes = [];
 
-  // Distribución de filas: Delante (BAJA), Centro (ESCALERA 1 + PRIMERA), Fondo (ESCALERA 2 + BUHARDILLA)
   const rowsConfig = [
     {
-      z: 5.0, // Fila Delantera
+      z: 5.0, 
       racksDef: [
         { name: 'BAJA', rackIndexInPlant: 0, totalPlantRacks: 3 },
         { name: 'BAJA', rackIndexInPlant: 1, totalPlantRacks: 3 },
@@ -328,7 +308,7 @@ function buildDataCenterRoom(devices) {
       ]
     },
     {
-      z: 0.0, // Fila Intermedia
+      z: 0.0, 
       racksDef: [
         { name: 'ESCALERA 1', rackIndexInPlant: 0, totalPlantRacks: 1 },
         { name: 'PRIMERA', rackIndexInPlant: 0, totalPlantRacks: 3 },
@@ -337,7 +317,7 @@ function buildDataCenterRoom(devices) {
       ]
     },
     {
-      z: -5.0, // Fila del Fondo
+      z: -5.0, 
       racksDef: [
         { name: 'ESCALERA 2', rackIndexInPlant: 0, totalPlantRacks: 1 },
         { name: 'BUHARDILLA', rackIndexInPlant: 0, totalPlantRacks: 3 },
@@ -354,7 +334,6 @@ function buildDataCenterRoom(devices) {
     return acc;
   }, {});
 
-  // Recopilar estancias únicas presentes y armar el mapa con colores fijos
   const activeEstancias = [...new Set(devices.map(d => (d.estancia || 'GENERAL').trim()))].sort((a, b) => a.localeCompare(b));
   const estanciaColorMap = {};
   
@@ -401,7 +380,7 @@ function buildDataCenterRoom(devices) {
       backDoor.rotation.y = Math.PI;
       scene.add(backDoor);
 
-      // Etiqueta superior del rack (Texto limpio flotante sin recuadros)
+      // Etiqueta superior del rack
       const headerGeo = new THREE.PlaneGeometry(3.0, 1.0);
       const headerMat = new THREE.MeshBasicMaterial({
         map: createPlantHeaderTexture(rackInfo.name),
@@ -427,37 +406,30 @@ function buildDataCenterRoom(devices) {
       const totalRacksForPlant = rackInfo.totalPlantRacks;
       const rackEstancias = estanciasKeys.filter((_, idx) => idx % totalRacksForPlant === rackInfo.rackIndexInPlant);
 
-      // CÁLCULO SECUENCIAL PERFECTO:
-      // Controlamos la posición vertical Y acumulada empezando desde el tope superior usable del rack (Y = 1.68)
       let currentYTop = 1.68;
-      const rowStepY = 0.38;     // Distancia entre filas de blades
-      const subrackPadding = 0.08; // Margen superior e inferior interno de cada marco
-      const gapBetweenSubracks = 0.08; // Espacio libre entre subracks distintos
+      const rowStepY = 0.38;     
+      const subrackPadding = 0.08; 
+      const gapBetweenSubracks = 0.08; 
 
       rackEstancias.forEach(estanciaName => {
         const estanciaDevices = groupedByEstancia[estanciaName] || [];
         if (estanciaDevices.length === 0) return;
 
         const numDevices = estanciaDevices.length;
-        const numRows = Math.ceil(numDevices / 2); // Número real de filas requeridas
+        const numRows = Math.ceil(numDevices / 2); 
         const contentHeight = numRows * rowStepY;
         const totalSubrackHeight = contentHeight + subrackPadding;
 
-        // El centro del marco del subrack actual
         const subrackCenterY = currentYTop - (totalSubrackHeight / 2);
 
-        // Color exacto obtenido del catálogo oficial de estancias
         const roomColorObj = getRoomColor(estanciaName);
         const colorValue = new THREE.Color(roomColorObj.value);
 
-        // Crear marco 3D perimetral con grosor bien definido (0.04u)
         const subrackWidth = 3.24;
         const frameMesh = createSubrackFrameMesh(subrackWidth, totalSubrackHeight, 0.04, colorValue);
         frameMesh.position.set(rackCenterX, subrackCenterY, zPos + 0.61);
         scene.add(frameMesh);
-        // NO se añade a rackMeshes para no bloquear clics del raycaster
 
-        // Posicionar los dispositivos dentro del subrack actual
         const firstRowY = currentYTop - (subrackPadding / 2) - (rowStepY / 2);
 
         estanciaDevices.forEach((device, dIdx) => {
@@ -467,24 +439,40 @@ function buildDataCenterRoom(devices) {
           const xPos = rackCenterX + (col === 0 ? -0.78 : 0.78);
           const yPos = firstRowY - (rowIdx * rowStepY);
 
+          // Chasis de la Blade
           const bladeGeo = new THREE.BoxGeometry(1.4, 0.27, 0.08);
           const bladeMat = new THREE.MeshStandardMaterial({ 
             map: createBladeTexture(device),
-            emissive: 0xffffff,
-            emissiveMap: createBladeTexture(device),
-            emissiveIntensity: 0.25,
             roughness: 0.2
           });
 
           const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
           bladeMesh.position.set(xPos, yPos, zPos + 0.63);
-          
           bladeMesh.userData = device;
           scene.add(bladeMesh);
           rackMeshes.push(bladeMesh);
+
+          // --- CREACIÓN DE LOS LEDS 3D INDEPENDIENTES PARA EL PARPADEO ---
+          const ledGeo = new THREE.SphereGeometry(0.035, 8, 8);
+
+          // LED 1 (Conexión: Wifi = Cian, Cable = Verde)
+          const isWifi = device.tipo_conexion === 'WIFI';
+          const led1Mat = new THREE.MeshBasicMaterial({ color: isWifi ? 0x00ffff : 0x00ff00 });
+          const led1Mesh = new THREE.Mesh(ledGeo, led1Mat);
+          // Coordenadas relativas en el frontal de la blade
+          led1Mesh.position.set(xPos - 0.55, yPos, zPos + 0.68);
+          led1Mesh.userData = { isLed: true }; // Marcador para que el bucle animate los controle
+          scene.add(led1Mesh);
+
+          // LED 2 (Tipo IP: Estática = Rojo, Dinámica/Otro = Naranja)
+          const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
+          const led2Mat = new THREE.MeshBasicMaterial({ color: isStatic ? 0xff0000 : 0xffa500 });
+          const led2Mesh = new THREE.Mesh(ledGeo, led2Mat);
+          led2Mesh.position.set(xPos - 0.46, yPos, zPos + 0.68);
+          led2Mesh.userData = { isLed: true };
+          scene.add(led2Mesh);
         });
 
-        // Actualizar la cota Y superior para el siguiente subrack
         currentYTop = currentYTop - totalSubrackHeight - gapBetweenSubracks;
       });
     });
