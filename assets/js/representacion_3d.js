@@ -90,8 +90,9 @@ function init3DEnvironment() {
   const width = container.clientWidth || window.innerWidth;
   const height = container.clientHeight || (window.innerHeight - 73);
 
-  camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 1000);
-  camera.position.set(0, 5, 18);
+  // Ampliamos el campo de visión ligeramente (de 55 a 60) para tener más amplitud angular
+  camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+  camera.position.set(0, 6, 22); // Posición inicial un poco más alta y retirada
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setSize(width, height);
@@ -103,8 +104,8 @@ function init3DEnvironment() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.maxPolarAngle = Math.PI / 2 - 0.02; 
-  controls.minDistance = 3;
-  controls.maxDistance = 45;
+  controls.minDistance = 2;   // Permite acercarse mucho más al detalle de cualquier blade
+  controls.maxDistance = 60;  // Ampliamente aumentado (antes 45) para llegar cómodamente a la tercera fila y más allá
 
   // Iluminación general de sala
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
