@@ -34,7 +34,7 @@ function loadUserInfo() {
 }
 
 /**
- * Añade dinámicamente una nueva card de servicio al contenedor
+ * Añade dinámicamente una nueva card de servicio al contenedor con campos ordenados y SSID condicional
  */
 function addServiceCard() {
   const container = document.getElementById('servicios-container');
@@ -57,16 +57,23 @@ function addServiceCard() {
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+      
+      <!-- FILA 1: Servicio, Tipo Conexión, SSID (condicional), Tipo IP, Dirección IP, Software -->
+      <div>
+        <label class="block text-slate-400 mb-1">Servicio *</label>
+        <input type="text" name="servicio" required placeholder="Ej. Home Assistant" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+      </div>
+
       <div>
         <label class="block text-slate-400 mb-1">Tipo Conexión</label>
-        <select name="tipo_conexion" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        <select name="tipo_conexion" class="tipo-conexion-select w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
           <option value="ETHERNET">ETHERNET</option>
           <option value="WIFI">WIFI</option>
         </select>
       </div>
 
-      <div>
-        <label class="block text-slate-400 mb-1">SSID (Si es Wifi)</label>
+      <div class="ssid-container hidden">
+        <label class="block text-slate-400 mb-1">SSID (Red Wifi)</label>
         <input type="text" name="ssid" placeholder="Ej. HomeIoT" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
       </div>
 
@@ -85,18 +92,14 @@ function addServiceCard() {
       </div>
 
       <div>
-        <label class="block text-slate-400 mb-1">Servicio</label>
-        <input type="text" name="servicio" placeholder="Ej. Home Assistant, MQTT" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-      </div>
-
-      <div>
         <label class="block text-slate-400 mb-1">Software (Servicio)</label>
-        <input type="text" name="software" placeholder="Ej. Docker container / Mosquitto" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        <input type="text" name="software" placeholder="Ej. Docker / Mosquitto" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
       </div>
 
+      <!-- FILA 2: Protocolo, Puertos Rout, Puertos Dock, Docker Network -->
       <div>
         <label class="block text-slate-400 mb-1">Protocolo</label>
-        <input type="text" name="protocolo" placeholder="Ej. TCP, UDP, HTTP" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        <input type="text" name="protocolo" placeholder="Ej. TCP, HTTP" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
       </div>
 
       <div>
@@ -119,8 +122,28 @@ function addServiceCard() {
         <label class="block text-slate-400 mb-1">Docker Network</label>
         <input type="text" name="dock_network" placeholder="Ej. bridge, host, proxy-net" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
       </div>
+
+      <!-- FILA 3: Comentarios del Servicio (Ancho completo) -->
+      <div class="md:col-span-3">
+        <label class="block text-slate-400 mb-1">Comentarios del Servicio</label>
+        <textarea name="comentarios" rows="2" placeholder="Notas específicas sobre este servicio..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+      </div>
+
     </div>
   `;
+
+  // Lógica para mostrar/ocultar el SSID según el tipo de conexión seleccionado
+  const tipoConexionSelect = card.querySelector('.tipo-conexion-select');
+  const ssidContainer = card.querySelector('.ssid-container');
+
+  tipoConexionSelect.addEventListener('change', (e) => {
+    if (e.target.value === 'WIFI') {
+      ssidContainer.classList.remove('hidden');
+    } else {
+      ssidContainer.classList.add('hidden');
+      card.querySelector('[name="ssid"]').value = ''; // Limpiar valor si se oculta
+    }
+  });
 
   // Listener para el botón de eliminar card
   const removeBtn = card.querySelector('.btn-remove-service');
@@ -154,7 +177,7 @@ async function handleSubmit(e) {
   submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
 
   try {
-    // 1. Recoger datos de hardware principales
+    // 1. Recoger datos de hardware principales (según la nueva disposición de 3 filas en HTML)
     const planta = document.getElementById('planta').value;
     const estancia = document.getElementById('estancia').value.trim();
     const hostname = document.getElementById('hostname').value.trim();
@@ -168,9 +191,10 @@ async function handleSubmit(e) {
     const servicios = [];
 
     serviceCards.forEach(card => {
+      const tipoConexion = card.querySelector('[name="tipo_conexion"]').value;
       const servicioObj = {
-        tipo_conexion: card.querySelector('[name="tipo_conexion"]').value,
-        ssid: card.querySelector('[name="ssid"]').value.trim(),
+        tipo_conexion: tipoConexion,
+        ssid: tipoConexion === 'WIFI' ? card.querySelector('[name="ssid"]').value.trim() : null,
         tipo_ip: card.querySelector('[name="tipo_ip"]').value,
         ip: card.querySelector('[name="ip"]').value.trim(),
         servicio: card.querySelector('[name="servicio"]').value.trim(),
@@ -180,7 +204,8 @@ async function handleSubmit(e) {
         puerto_rout_int: card.querySelector('[name="puerto_rout_int"]').value.trim(),
         puerto_dock_ext: card.querySelector('[name="puerto_dock_ext"]').value.trim(),
         puerto_dock_int: card.querySelector('[name="puerto_dock_int"]').value.trim(),
-        dock_network: card.querySelector('[name="dock_network"]').value.trim()
+        dock_network: card.querySelector('[name="dock_network"]').value.trim(),
+        comentarios: card.querySelector('[name="comentarios"]').value.trim()
       };
       servicios.push(servicioObj);
     });
