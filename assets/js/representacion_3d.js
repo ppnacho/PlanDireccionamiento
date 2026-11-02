@@ -542,11 +542,11 @@ window.openBladeModal = function(device) {
   document.getElementById('modal-mac').textContent = device.mac || 'N/D';
   document.getElementById('modal-ubicacion').textContent = `${device.planta} / ${device.estancia || 'General'}`;
 
-  let modalHeaderActions = document.getElementById('modal-header-actions'); 
-  if (modalHeaderActions) {
-    modalHeaderActions.innerHTML = `
-      <a href="alta.html?id=${device.id}" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-lg">
-        <i class="fa-solid fa-pen-to-square"></i> Editar
+  let modalFooterActions = document.getElementById('modal-footer-actions'); 
+  if (modalFooterActions) {
+    modalFooterActions.innerHTML = `
+      <a href="alta.html?id=${device.id}" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-colors border border-blue-500 shadow-lg">
+        <i class="fa-solid fa-pen-to-square"></i> Editar Dispositivo
       </a>
     `;
   }
