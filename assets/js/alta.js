@@ -34,109 +34,31 @@ function loadUserInfo() {
 }
 
 /**
- * Añade dinámicamente una nueva card de servicio al contenedor con la estructura exacta de 3 filas
+ * Añade dinámicamente una nueva card clonando la plantilla HTML
  */
 function addServiceCard() {
   const container = document.getElementById('servicios-container');
+  const template = document.getElementById('service-card-template');
+  const clone = template.content.cloneNode(true);
+  
+  const card = clone.querySelector('.service-card');
   const serviceIndex = container.children.length + 1;
 
-  const card = document.createElement('div');
-  card.className = 'service-card bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all';
-  
-  card.innerHTML = `
-    <div class="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
-    <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-      <span class="text-xs font-bold text-indigo-300 flex items-center gap-2">
-        <i class="fa-solid fa-cubes"></i> Servicio #${serviceIndex}
-      </span>
-      ${serviceIndex > 1 ? `
-        <button type="button" class="btn-remove-service text-red-400 hover:text-red-300 text-xs flex items-center gap-1 transition">
-          <i class="fa-solid fa-trash"></i> Eliminar
-        </button>
-      ` : ''}
-    </div>
+  // Configurar título del servicio
+  card.querySelector('.service-title').innerHTML = `<i class="fa-solid fa-cubes"></i> Servicio #${serviceIndex}`;
 
-    <div class="space-y-4 text-xs">
-      
-      <!-- FILA 1: Servicio, Tipo Conexión, SSID (condicional), Tipo IP, Dirección IP, Protocolo -->
-      <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-        <div>
-          <label class="block text-slate-400 mb-1">Servicio *</label>
-          <input type="text" name="servicio" required placeholder="Ej. Home Assistant" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-        </div>
+  // Gestionar visibilidad del botón de eliminar (solo si hay más de 1 servicio)
+  const removeBtn = card.querySelector('.btn-remove-service');
+  if (serviceIndex === 1) {
+    removeBtn.remove(); // El primer servicio no se puede eliminar
+  } else {
+    removeBtn.addEventListener('click', () => {
+      card.remove();
+      reindexServiceCards();
+    });
+  }
 
-        <div>
-          <label class="block text-slate-400 mb-1">Tipo Conexión</label>
-          <select name="tipo_conexion" class="tipo-conexion-select w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-            <option value="ETHERNET">ETHERNET</option>
-            <option value="WIFI">WIFI</option>
-          </select>
-        </div>
-
-        <div class="ssid-container hidden">
-          <label class="block text-slate-400 mb-1">SSID (Red Wifi)</label>
-          <input type="text" name="ssid" placeholder="Ej. HomeIoT" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-slate-400 mb-1">Tipo IP</label>
-          <select name="tipo_ip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-            <option value="dinamica">DHCP Dinámica</option>
-            <option value="estatica">Estática</option>
-            <option value="DHCP estatica">DHCP Estática</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-slate-400 mb-1">Dirección IP</label>
-          <input type="text" name="ip" placeholder="1.1.1.X" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-slate-400 mb-1">Protocolo</label>
-          <input type="text" name="protocolo" placeholder="Ej. TCP, HTTP" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-        </div>
-      </div>
-
-      <!-- FILA 2: Software (Servicio), Puertos Rout, Puertos Dock, Docker Network -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <div>
-          <label class="block text-slate-400 mb-1">Software</label>
-          <input type="text" name="software" placeholder="Ej. Docker" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-        </div>
-
-        <div>
-          <label class="block text-slate-400 mb-1">Puerto Rout Ext ➔ Int</label>
-          <div class="flex gap-1">
-            <input type="text" name="puerto_rout_ext" placeholder="Ext" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-            <input type="text" name="puerto_rout_int" placeholder="Int" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-slate-400 mb-1">Puerto Dock Ext ➔ Int</label>
-          <div class="flex gap-1">
-            <input type="text" name="puerto_dock_ext" placeholder="Ext" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-            <input type="text" name="puerto_dock_int" placeholder="Int" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-slate-400 mb-1">Docker Network</label>
-          <input type="text" name="dock_network" placeholder="Ej. bridge, host" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-        </div>
-      </div>
-
-      <!-- FILA 3: Comentarios del Servicio (Ancho completo) -->
-      <div>
-        <label class="block text-slate-400 mb-1">Comentarios</label>
-        <textarea name="comentarios" rows="2" placeholder="Notas específicas sobre este servicio..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
-      </div>
-
-    </div>
-  `;
-
-  // Lógica para mostrar/ocultar el SSID según el tipo de conexión seleccionado
+  // Lógica para mostrar/ocultar el SSID según el tipo de conexión
   const tipoConexionSelect = card.querySelector('.tipo-conexion-select');
   const ssidContainer = card.querySelector('.ssid-container');
 
@@ -145,18 +67,9 @@ function addServiceCard() {
       ssidContainer.classList.remove('hidden');
     } else {
       ssidContainer.classList.add('hidden');
-      card.querySelector('[name="ssid"]').value = ''; // Limpiar valor si se oculta
+      card.querySelector('[name="ssid"]').value = '';
     }
   });
-
-  // Listener para el botón de eliminar card
-  const removeBtn = card.querySelector('.btn-remove-service');
-  if (removeBtn) {
-    removeBtn.addEventListener('click', () => {
-      card.remove();
-      reindexServiceCards();
-    });
-  }
 
   container.appendChild(card);
 }
@@ -164,7 +77,7 @@ function addServiceCard() {
 function reindexServiceCards() {
   const cards = document.querySelectorAll('.service-card');
   cards.forEach((card, idx) => {
-    const titleSpan = card.querySelector('span');
+    const titleSpan = card.querySelector('.service-title');
     if (titleSpan) {
       titleSpan.innerHTML = `<i class="fa-solid fa-cubes"></i> Servicio #${idx + 1}`;
     }
@@ -236,17 +149,16 @@ async function handleSubmit(e) {
     alert('¡Dispositivo y servicios guardados con éxito!');
     document.getElementById('form-alta').reset();
     
-    // Opcional: limpiar servicios dinámicos y dejar uno por defecto limpio tras resetear
     document.getElementById('servicios-container').innerHTML = '';
     addServiceCard();
 
     submitBtn.disabled = false;
-    submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Dispositivo y Servicios`;
+    submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar`;
 
   } catch (err) {
     console.error('Error al guardar:', err);
     alert(`Error: ${err.message}`);
     submitBtn.disabled = false;
-    submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Dispositivo y Servicios`;
+    submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar`;
   }
 }
