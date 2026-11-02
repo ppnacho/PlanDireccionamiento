@@ -1,6 +1,6 @@
 /**
- * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva con LEDs Independientes Asíncronos (150ms)
- * Acceso estrictamente mediante la Edge Function 'obtener-dispositivos'.
+ * NetControl - Motor WebGL 3D Avanzado (Three.js) - Versión Definitiva Normalizada
+ * Acceso mediante la Edge Function 'obtener-dispositivos' con soporte multi-servicio.
  */
 import { supabase } from './supabaseClient.js';
 
@@ -90,9 +90,8 @@ function init3DEnvironment() {
   const width = container.clientWidth || window.innerWidth;
   const height = container.clientHeight || (window.innerHeight - 73);
 
-  // Ampliamos el campo de visión ligeramente (de 55 a 60) para tener más amplitud angular
   camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-  camera.position.set(0, 6, 22); // Posición inicial un poco más alta y retirada
+  camera.position.set(0, 6, 22);
 
   renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setSize(width, height);
@@ -104,10 +103,10 @@ function init3DEnvironment() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.maxPolarAngle = Math.PI / 2 - 0.02; 
-  controls.minDistance = 0.5; // Muy cerca, casi tocando los dispositivos
-  controls.maxDistance = 60;  // Para ver toda la sala desde lejos
-  controls.enablePan = true;  // Permite desplazar el centro de la cámara libremente
-  controls.panSpeed = 1.0;    // Velocidad de desplazamiento fluido
+  controls.minDistance = 0.5;
+  controls.maxDistance = 60;
+  controls.enablePan = true;
+  controls.panSpeed = 1.0;
 
   // Iluminación general de sala
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
@@ -152,7 +151,6 @@ function animate() {
   const time = performance.now();
 
   scene.traverse((child) => {
-    // Si es un objeto LED, aplicamos un ciclo independiente basado en su propio desfase (150ms de cadencia)
     if (child.isMesh && child.userData && child.userData.isLed === true) {
       const offsetTime = time + child.userData.randomOffset;
       const blink = Math.floor(offsetTime / 150) % 2;
@@ -199,7 +197,7 @@ async function fetchDevices() {
 }
 
 /**
- * Genera la textura superior del rack mostrando exclusivamente el texto limpio de la planta (sin recuadros)
+ * Genera la textura superior del rack
  */
 function createPlantHeaderTexture(plantName) {
   const canvas = document.createElement('canvas');
@@ -224,7 +222,7 @@ function createPlantHeaderTexture(plantName) {
 }
 
 /**
- * Crea la textura frontal fotorrealista de cada blade (solo la chapa y el texto)
+ * Crea la textura frontal de cada blade
  */
 function createBladeTexture(device) {
   const canvas = document.createElement('canvas');
@@ -242,7 +240,6 @@ function createBladeTexture(device) {
   img.onload = () => {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // Recuadro de fondo gris con esquinas redondeadas
     ctx.fillStyle = '#cbd5e1'; 
     ctx.strokeStyle = '#64748b'; 
     ctx.lineWidth = 1.2;
@@ -252,7 +249,6 @@ function createBladeTexture(device) {
     ctx.fill();
     ctx.stroke();
 
-    // Hostname en color negro y legible
     ctx.fillStyle = '#000000';
     ctx.font = '15px monospace';
     const displayName = device.hostname || device.id_hw || 'Nodo';
@@ -295,7 +291,7 @@ function createSubrackFrameMesh(width, height, thickness, colorValue) {
 }
 
 /**
- * Construye la sala técnica 3D con distribución ordenada, subracks secuenciales y leyenda
+ * Construye la sala técnica 3D
  */
 function buildDataCenterRoom(devices) {
   rackMeshes.forEach(m => scene.remove(m));
@@ -455,20 +451,25 @@ function buildDataCenterRoom(devices) {
           scene.add(bladeMesh);
           rackMeshes.push(bladeMesh);
 
-          // --- LED 1 (Conexión) con desfase aleatorio independiente ---
+          // Extraer el primer servicio asociado para los LEDs físicos principales
+          const primaryService = (device.servicios_red && device.servicios_red.length > 0) 
+            ? device.servicios_red[0] 
+            : {};
+
+          // --- LED 1 (Conexión) ---
           const ledGeo = new THREE.SphereGeometry(0.035, 8, 8);
-          const isWifi = device.tipo_conexion === 'WIFI';
+          const isWifi = primaryService.tipo_conexion === 'WIFI';
           const led1Mat = new THREE.MeshBasicMaterial({ color: isWifi ? 0x00ffff : 0x00ff00 });
           const led1Mesh = new THREE.Mesh(ledGeo, led1Mat);
           led1Mesh.position.set(xPos - 0.55, yPos, zPos + 0.68);
           led1Mesh.userData = { 
             isLed: true, 
-            randomOffset: Math.random() * 2000 // Desfase aleatorio único en milisegundos
+            randomOffset: Math.random() * 2000 
           };
           scene.add(led1Mesh);
 
-          // --- LED 2 (Tipo IP) con desfase aleatorio independiente ---
-          const isStatic = device.tipo_ip === 'estatica' || device.tipo_ip === 'DHCP estatica';
+          // --- LED 2 (Tipo IP) ---
+          const isStatic = primaryService.tipo_ip === 'estatica' || primaryService.tipo_ip === 'DHCP estatica';
           const led2Mat = new THREE.MeshBasicMaterial({ color: isStatic ? 0xff0000 : 0xffa500 });
           const led2Mesh = new THREE.Mesh(ledGeo, led2Mat);
           led2Mesh.position.set(xPos - 0.46, yPos, zPos + 0.68);
@@ -486,7 +487,7 @@ function buildDataCenterRoom(devices) {
 }
 
 /**
- * Crea o actualiza la caja de leyenda flotante en la esquina superior derecha
+ * Leyenda flotante
  */
 function updateLegendUI(estanciaColorMap) {
   let legendEl = document.getElementById('room-legend-box');
@@ -532,47 +533,74 @@ function onCanvasClick(event) {
   }
 }
 
+/**
+ * Modal adaptado para listar múltiples servicios asociados al dispositivo
+ */
 window.openBladeModal = function(device) {
   document.getElementById('modal-title').textContent = device.id_hw || 'Sin ID';
   document.getElementById('modal-hostname').textContent = device.hostname ? `@${device.hostname}` : 'Sin hostname';
-  document.getElementById('modal-ip').textContent = device.ip || 'DHCP Dinámica';
   document.getElementById('modal-mac').textContent = device.mac || 'N/D';
   document.getElementById('modal-ubicacion').textContent = `${device.planta} / ${device.estancia || 'General'}`;
-  document.getElementById('modal-conexion').textContent = `${device.tipo_conexion} ${device.ssid ? '(' + device.ssid + ')' : ''} [${device.tipo_ip}]`;
+
+  let modalHeaderHtml = '';
+  if (device.software) {
+    modalHeaderHtml += `<span class="text-indigo-400 font-bold block mb-1">OS / Base: ${device.software}</span>`;
+  }
+  document.getElementById('modal-ip').innerHTML = modalHeaderHtml || 'Dispositivo físico';
 
   const extraSection = document.getElementById('modal-extra-section');
   let extraHtml = '';
 
-  const portsInfo = [
-    device.puerto_rout_ext ? `Rout Ext: ${device.puerto_rout_ext}➔${device.puerto_rout_int || '?'}` : '',
-    device.puerto_dock_int ? `Dock Int: ${device.puerto_dock_int}` : ''
-  ].filter(Boolean).join(' | ');
+  const serviciosList = device.servicios_red || [];
 
-  if (portsInfo || device.dock_network) {
-    extraHtml += `
-      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-        <span class="text-slate-500 block text-[10px] uppercase">RED Y PUERTOS</span>
-        <span class="text-slate-200 text-xs">${portsInfo || 'Sin mapeo'} ${device.dock_network ? `<br><span class="text-indigo-400 font-bold">Docker: ${device.dock_network}</span>` : ''}</span>
-      </div>
-    `;
-  }
+  if (serviciosList.length > 0) {
+    extraHtml += `<div class="space-y-3"><span class="text-slate-400 block text-[11px] font-bold uppercase tracking-wider border-b border-slate-800 pb-1">Servicios Asociados (${serviciosList.length})</span>`;
 
-  if ((device.servicio && device.servicio.length > 0) || (device.software && device.software.length > 0)) {
-    extraHtml += `
-      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5">
-        <span class="text-slate-500 block text-[10px] uppercase">SERVICIOS & SOFTWARE</span>
-        <div class="flex flex-wrap gap-1.5">
-          ${device.servicio ? device.servicio.map(s => `<span class="text-[10px] bg-slate-900 text-blue-300 px-2 py-0.5 rounded-md border border-slate-800 font-semibold">${s}</span>`).join('') : ''}
-          ${device.software ? device.software.map(sw => `<span class="text-[10px] bg-indigo-950/80 text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-900/80 font-semibold">${sw}</span>`).join('') : ''}
+    serviciosList.forEach((serv, idx) => {
+      const portsInfo = [
+        serv.puerto_rout_ext ? `Rout Ext: ${serv.puerto_rout_ext}➔${serv.puerto_rout_int || '?'}` : '',
+        serv.puerto_dock_int ? `Dock Int: ${serv.puerto_dock_int}` : ''
+      ].filter(Boolean).join(' | ');
+
+      extraHtml += `
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-blue-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-cube"></i> #${idx + 1} - ${serv.servicio || 'Servicio sin nombre'}
+            </span>
+            <span class="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-slate-300 border border-slate-800">
+              ${serv.tipo_conexion} ${serv.ssid ? '(' + serv.ssid + ')' : ''} [${serv.tipo_ip}]
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+            <div><span class="text-slate-500">IP:</span> <span class="text-emerald-400 font-mono">${serv.ip || 'DHCP'}</span></div>
+            <div><span class="text-slate-500">Protocolo:</span> ${serv.protocolo || 'N/D'}</div>
+          </div>
+
+          ${serv.software ? `<div class="text-[11px]"><span class="text-slate-500">Software:</span> <span class="text-indigo-300">${serv.software}</span></div>` : ''}
+
+          ${portsInfo || serv.dock_network ? `
+            <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-900">
+              ${portsInfo ? `<div>${portsInfo}</div>` : ''}
+              ${serv.dock_network ? `<div>Docker Net: <span class="text-indigo-400 font-bold">${serv.dock_network}</span></div>` : ''}
+            </div>
+          ` : ''}
+
+          ${serv.comentarios ? `<div class="text-[10px] text-amber-300/90 italic pt-1">Nota: ${serv.comentarios}</div>` : ''}
         </div>
-      </div>
-    `;
+      `;
+    });
+
+    extraHtml += `</div>`;
+  } else {
+    extraHtml += `<div class="text-xs text-slate-500 italic p-3 text-center bg-slate-950 rounded-xl border border-slate-800">No hay servicios registrados para este dispositivo.</div>`;
   }
 
   if (device.comentarios) {
     extraHtml += `
       <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-        <span class="text-slate-500 block text-[10px] uppercase">COMENTARIOS</span>
+        <span class="text-slate-500 block text-[10px] uppercase">COMENTARIOS DEL HARDWARE</span>
         <span class="text-amber-300/90 italic text-xs">${device.comentarios}</span>
       </div>
     `;
