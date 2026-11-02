@@ -65,13 +65,38 @@ async function cargarDatosParaEdicion(id) {
     if (!dispositivo) throw new Error('Dispositivo no encontrado.');
 
     // 1. Rellenar campos principales del hardware
-    document.getElementById('planta').value = dispositivo.planta || 'BAJA';
-    document.getElementById('estancia').value = dispositivo.estancia || '';
+    document.getElementById('planta').value = dispositivo.planta || '';
     document.getElementById('hostname').value = dispositivo.hostname || '';
     document.getElementById('id_hw').value = dispositivo.id_hw || '';
     document.getElementById('mac').value = dispositivo.mac || '';
     document.getElementById('software_base').value = dispositivo.software || '';
     document.getElementById('comentarios').value = dispositivo.comentarios || '';
+
+    // Asignación inteligente para la estancia (soporta tanto input como select)
+    const estanciaEl = document.getElementById('estancia');
+    if (estanciaEl) {
+      const valEstancia = (dispositivo.estancia || '').trim();
+      if (estanciaEl.tagName === 'SELECT') {
+        let matched = false;
+        for (let option of estanciaEl.options) {
+          if (option.value.toUpperCase() === valEstancia.toUpperCase() || option.text.toUpperCase() === valEstancia.toUpperCase()) {
+            estanciaEl.value = option.value;
+            matched = true;
+            break;
+          }
+        }
+        // Si no estaba en las opciones, la añadimos dinámicamente para que no se quede en blanco
+        if (!matched && valEstancia) {
+          const newOpt = document.createElement('option');
+          newOpt.value = valEstancia;
+          newOpt.textContent = valEstancia;
+          estanciaEl.appendChild(newOpt);
+          estanciaEl.value = valEstancia;
+        }
+      } else {
+        estanciaEl.value = valEstancia;
+      }
+    }
 
     // 2. Rellenar tarjetas de servicios
     const servicios = dispositivo.servicios_red || [];
