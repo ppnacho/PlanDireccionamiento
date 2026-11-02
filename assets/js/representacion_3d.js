@@ -447,7 +447,7 @@ function buildDataCenterRoom(devices) {
 
           const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
           bladeMesh.position.set(xPos, yPos, zPos + 0.63);
-          bladeMesh.userData = device;
+          bladeMesh.userData = device; // Vinculación esencial para el raycaster
           scene.add(bladeMesh);
           rackMeshes.push(bladeMesh);
 
@@ -527,14 +527,14 @@ function onCanvasClick(event) {
 
   if (intersects.length > 0) {
     const clickedObj = intersects[0].object;
-    if (clickedObj.userData && clickedObj.userData.id_hw) {
+    if (clickedObj.userData && (clickedObj.userData.id_hw || clickedObj.userData.hostname)) {
       openBladeModal(clickedObj.userData);
     }
   }
 }
 
 /**
- * Modal adaptado para listar múltiples servicios asociados al dispositivo
+ * Modal adaptado con la estructura solicitada
  */
 window.openBladeModal = function(device) {
   document.getElementById('modal-title').textContent = device.id_hw || 'Sin ID';
@@ -542,7 +542,7 @@ window.openBladeModal = function(device) {
   document.getElementById('modal-mac').textContent = device.mac || 'N/D';
   document.getElementById('modal-ubicacion').textContent = `${device.planta} / ${device.estancia || 'General'}`;
 
-  // 1. Corregir bloque "Dirección IP" para mostrar el Software / OS Base del hardware
+  // 1. Bloque Dirección IP (muestra el software / OS Base del equipo físico)
   const ipBoxEl = document.getElementById('modal-ip');
   if (device.software) {
     ipBoxEl.innerHTML = `<span class="text-indigo-300 font-mono text-xs break-all">${device.software}</span>`;
@@ -550,9 +550,7 @@ window.openBladeModal = function(device) {
     ipBoxEl.textContent = 'No especificado';
   }
 
-  // 2. Cambiar "Enlace de red" (-) para que muestre el Hostname del dispositivo
-  const linkBoxEl = document.querySelector('.modal-enlace-red-label').nextElementSibling; // O el contenedor equivalente de red
-  // Si prefieres gestionarlo por id, asegúrate de poner un id="modal-enlace-red" en el HTML del modal:
+  // 2. Enlace de red (muestra el Hostname del dispositivo)
   const enlaceRedEl = document.getElementById('modal-enlace-red');
   if (enlaceRedEl) {
     enlaceRedEl.textContent = device.hostname ? `@${device.hostname}` : 'N/D';
@@ -561,7 +559,7 @@ window.openBladeModal = function(device) {
   const extraSection = document.getElementById('modal-extra-section');
   let extraHtml = '';
 
-  // 3. Comentarios del hardware encima de los servicios asociados
+  // 3. Comentarios del hardware colocados ENCIMA de los servicios asociados
   if (device.comentarios) {
     extraHtml += `
       <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
@@ -577,7 +575,7 @@ window.openBladeModal = function(device) {
     extraHtml += `<div class="space-y-3"><span class="text-slate-400 block text-[11px] font-bold uppercase tracking-wider border-b border-slate-800 pb-1">Servicios Asociados (${serviciosList.length})</span>`;
 
     serviciosList.forEach((serv, idx) => {
-      // 4. Reestructurar puertos: Dock Ext ➔ Int al principio, seguido de Rout Ext ➔ Int en la misma línea
+      // 4. Puertos ordenados: Dock primero, seguido opcionalmente de Rout en la misma línea
       const dockPorts = (serv.puerto_dock_ext || serv.puerto_dock_int) 
         ? `Dock: ${serv.puerto_dock_ext || '?'}➔${serv.puerto_dock_int || '?'}` 
         : '';
@@ -626,6 +624,7 @@ window.openBladeModal = function(device) {
   extraSection.innerHTML = extraHtml;
   document.getElementById('blade-modal').classList.remove('hidden');
 };
+
 window.closeModal = function() {
   document.getElementById('blade-modal').classList.add('hidden');
 };
