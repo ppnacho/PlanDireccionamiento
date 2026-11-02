@@ -101,7 +101,7 @@ function addServiceCard() {
       <!-- FILA 2: Software (Servicio), Puertos Rout, Puertos Dock, Docker Network -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div>
-          <label class="block text-slate-400 mb-1">Software (Servicio)</label>
+          <label class="block text-slate-400 mb-1">Software</label>
           <input type="text" name="software" placeholder="Ej. Docker" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
 
