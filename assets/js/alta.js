@@ -34,7 +34,7 @@ function loadUserInfo() {
 }
 
 /**
- * Añade dinámicamente una nueva card de servicio al contenedor con campos ordenados y SSID condicional
+ * Añade dinámicamente una nueva card de servicio al contenedor con la estructura exacta de 3 filas
  */
 function addServiceCard() {
   const container = document.getElementById('servicios-container');
@@ -56,75 +56,79 @@ function addServiceCard() {
       ` : ''}
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+    <div class="space-y-4 text-xs">
       
       <!-- FILA 1: Servicio, Tipo Conexión, SSID (condicional), Tipo IP, Dirección IP, Software -->
-      <div>
-        <label class="block text-slate-400 mb-1">Servicio *</label>
-        <input type="text" name="servicio" required placeholder="Ej. Home Assistant" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-      </div>
+      <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+        <div>
+          <label class="block text-slate-400 mb-1">Servicio *</label>
+          <input type="text" name="servicio" required placeholder="Ej. Home Assistant" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
 
-      <div>
-        <label class="block text-slate-400 mb-1">Tipo Conexión</label>
-        <select name="tipo_conexion" class="tipo-conexion-select w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-          <option value="ETHERNET">ETHERNET</option>
-          <option value="WIFI">WIFI</option>
-        </select>
-      </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Tipo Conexión</label>
+          <select name="tipo_conexion" class="tipo-conexion-select w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="ETHERNET">ETHERNET</option>
+            <option value="WIFI">WIFI</option>
+          </select>
+        </div>
 
-      <div class="ssid-container hidden">
-        <label class="block text-slate-400 mb-1">SSID (Red Wifi)</label>
-        <input type="text" name="ssid" placeholder="Ej. HomeIoT" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-      </div>
+        <div class="ssid-container hidden">
+          <label class="block text-slate-400 mb-1">SSID (Red Wifi)</label>
+          <input type="text" name="ssid" placeholder="Ej. HomeIoT" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
 
-      <div>
-        <label class="block text-slate-400 mb-1">Tipo IP</label>
-        <select name="tipo_ip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-          <option value="dinamica">DHCP Dinámica</option>
-          <option value="estatica">Estática</option>
-          <option value="DHCP estatica">DHCP Estática</option>
-        </select>
-      </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Tipo IP</label>
+          <select name="tipo_ip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="dinamica">DHCP Dinámica</option>
+            <option value="estatica">Estática</option>
+            <option value="DHCP estatica">DHCP Estática</option>
+          </select>
+        </div>
 
-      <div>
-        <label class="block text-slate-400 mb-1">Dirección IP</label>
-        <input type="text" name="ip" placeholder="1.1.1.X" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-      </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Dirección IP</label>
+          <input type="text" name="ip" placeholder="1.1.1.X" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
 
-      <div>
-        <label class="block text-slate-400 mb-1">Software (Servicio)</label>
-        <input type="text" name="software" placeholder="Ej. Docker / Mosquitto" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        <div>
+          <label class="block text-slate-400 mb-1">Software (Servicio)</label>
+          <input type="text" name="software" placeholder="Ej. Docker" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
       </div>
 
       <!-- FILA 2: Protocolo, Puertos Rout, Puertos Dock, Docker Network -->
-      <div>
-        <label class="block text-slate-400 mb-1">Protocolo</label>
-        <input type="text" name="protocolo" placeholder="Ej. TCP, HTTP" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-      </div>
-
-      <div>
-        <label class="block text-slate-400 mb-1">Puerto Rout Ext ➔ Int</label>
-        <div class="flex gap-1">
-          <input type="text" name="puerto_rout_ext" placeholder="Ext" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-          <input type="text" name="puerto_rout_int" placeholder="Int" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div>
+          <label class="block text-slate-400 mb-1">Protocolo</label>
+          <input type="text" name="protocolo" placeholder="Ej. TCP, HTTP" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
-      </div>
 
-      <div>
-        <label class="block text-slate-400 mb-1">Puerto Dock Ext ➔ Int</label>
-        <div class="flex gap-1">
-          <input type="text" name="puerto_dock_ext" placeholder="Ext" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-          <input type="text" name="puerto_dock_int" placeholder="Int" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        <div>
+          <label class="block text-slate-400 mb-1">Puerto Rout Ext ➔ Int</label>
+          <div class="flex gap-1">
+            <input type="text" name="puerto_rout_ext" placeholder="Ext" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+            <input type="text" name="puerto_rout_int" placeholder="Int" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
         </div>
-      </div>
 
-      <div class="md:col-span-3">
-        <label class="block text-slate-400 mb-1">Docker Network</label>
-        <input type="text" name="dock_network" placeholder="Ej. bridge, host, proxy-net" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        <div>
+          <label class="block text-slate-400 mb-1">Puerto Dock Ext ➔ Int</label>
+          <div class="flex gap-1">
+            <input type="text" name="puerto_dock_ext" placeholder="Ext" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+            <input type="text" name="puerto_dock_int" placeholder="Int" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 mb-1">Docker Network</label>
+          <input type="text" name="dock_network" placeholder="Ej. bridge, host" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+        </div>
       </div>
 
       <!-- FILA 3: Comentarios del Servicio (Ancho completo) -->
-      <div class="md:col-span-3">
+      <div>
         <label class="block text-slate-400 mb-1">Comentarios del Servicio</label>
         <textarea name="comentarios" rows="2" placeholder="Notas específicas sobre este servicio..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
       </div>
@@ -177,9 +181,9 @@ async function handleSubmit(e) {
   submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
 
   try {
-    // 1. Recoger datos de hardware principales (según la nueva disposición de 3 filas en HTML)
+    // 1. Recoger datos de hardware principales
     const planta = document.getElementById('planta').value;
-    const estancia = document.getElementById('estancia').value.trim();
+    const estancia = document.getElementById('estancia').value;
     const hostname = document.getElementById('hostname').value.trim();
     const id_hw = document.getElementById('id_hw').value.trim();
     const mac = document.getElementById('mac').value.trim();
@@ -230,7 +234,14 @@ async function handleSubmit(e) {
     if (data && data.success === false) throw new Error(data.message || 'Error en el servidor.');
 
     alert('¡Dispositivo y servicios guardados con éxito!');
-    form.reset(); // Limpia todos los campos del formulario
+    document.getElementById('form-alta').reset();
+    
+    // Opcional: limpiar servicios dinámicos y dejar uno por defecto limpio tras resetear
+    document.getElementById('servicios-container').innerHTML = '';
+    addServiceCard();
+
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Dispositivo y Servicios`;
 
   } catch (err) {
     console.error('Error al guardar:', err);
