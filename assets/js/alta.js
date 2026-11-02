@@ -53,34 +53,36 @@ function loadUserInfo() {
  */
 async function cargarDatosParaEdicion(id) {
   try {
-    const { data, error } = await supabase
-      .from('dispositivos_red')
-      .select('*, servicios_red(*)')
-      .eq('id', id)
-      .single();
+    // Invocamos la Edge Function pasando el ID como parámetro GET
+    const { data, error } = await supabase.functions.invoke(`edita-dispositivo?id=${id}`, {
+      method: 'GET'
+    });
 
-    if (error) throw error;
-    if (!data) throw new Error('Dispositivo no encontrado.');
+    if (error) throw new Error(error.message || 'Error de comunicación con el servidor.');
+    if (data && data.success === false) throw new Error(data.message || 'No se pudo recuperar el dispositivo.');
+
+    const dispositivo = data.device;
+    if (!dispositivo) throw new Error('Dispositivo no encontrado.');
 
     // 1. Rellenar campos principales del hardware
-    document.getElementById('planta').value = data.planta || 'BAJA';
-    document.getElementById('estancia').value = data.estancia || '';
-    document.getElementById('hostname').value = data.hostname || '';
-    document.getElementById('id_hw').value = data.id_hw || '';
-    document.getElementById('mac').value = data.mac || '';
-    document.getElementById('software_base').value = data.software || '';
-    document.getElementById('comentarios').value = data.comentarios || '';
+    document.getElementById('planta').value = dispositivo.planta || 'BAJA';
+    document.getElementById('estancia').value = dispositivo.estancia || '';
+    document.getElementById('hostname').value = dispositivo.hostname || '';
+    document.getElementById('id_hw').value = dispositivo.id_hw || '';
+    document.getElementById('mac').value = dispositivo.mac || '';
+    document.getElementById('software_base').value = dispositivo.software || '';
+    document.getElementById('comentarios').value = dispositivo.comentarios || '';
 
     // 2. Rellenar tarjetas de servicios
-    const servicios = data.servicios_red || [];
+    const servicios = dispositivo.servicios_red || [];
     const container = document.getElementById('servicios-container');
-    container.innerHTML = ''; // Limpiar contenedor por defecto
+    container.innerHTML = ''; 
 
     if (servicios.length === 0) {
-      addServiceCard(); // Si no tuviera ninguno, al menos creamos una vacía
+      addServiceCard();
     } else {
       servicios.forEach((serv) => {
-        addServiceCard(serv); // Añadimos la card rellenando sus datos
+        addServiceCard(serv);
       });
     }
 
@@ -217,7 +219,7 @@ async function handleSubmit(e) {
     });
 
     const payload = {
-      id: editDeviceId || null, // Si existe, la Edge Function sabrá que es una actualización
+      id: editDeviceId || null, // Incluye el ID si estamos editando
       planta,
       estancia,
       hostname,
@@ -228,8 +230,12 @@ async function handleSubmit(e) {
       servicios
     };
 
-    // 3. Invocar la Edge Function (puedes usar la misma o una adaptada que soporte upsert/actualización)
-    const { data, error } = await supabase.functions.invoke('guardar-dispositivo', {
+    // 3. SELECCIÓN DE LA EDGE FUNCTION SEGÚN EL MODO (AQUÍ ESTÁ EL CAMBIO CLAVE)
+    // Si editDeviceId tiene valor -> llama a 'edita-dispositivo'
+    // Si es null / vacío -> llama a la de alta 'guardar-dispositivo'
+    const endpoint = editDeviceId ? 'edita-dispositivo' : 'guardar-dispositivo';
+
+    const { data, error } = await supabase.functions.invoke(endpoint, {
       body: payload
     });
 
@@ -238,10 +244,11 @@ async function handleSubmit(e) {
 
     alert(editDeviceId ? '¡Dispositivo actualizado con éxito!' : '¡Dispositivo y servicios guardados con éxito!');
     
+    // 4. ACCIÓN POST-GUARDADO
     if (editDeviceId) {
-      window.location.href = 'representacion_3d.html'; // Volver al 3D tras editar
+      window.location.href = 'representacion_3d.html'; // Al editar, volvemos al 3D
     } else {
-      document.getElementById('form-alta').reset();
+      document.getElementById('form-alta').reset(); // Al dar de alta, limpiamos para seguir creando
       document.getElementById('servicios-container').innerHTML = '';
       addServiceCard();
     }
