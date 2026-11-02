@@ -58,7 +58,7 @@ function addServiceCard() {
 
     <div class="space-y-4 text-xs">
       
-      <!-- FILA 1: Servicio, Tipo Conexión, SSID (condicional), Tipo IP, Dirección IP, Software -->
+      <!-- FILA 1: Servicio, Tipo Conexión, SSID (condicional), Tipo IP, Dirección IP, Protocolo -->
       <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
         <div>
           <label class="block text-slate-400 mb-1">Servicio *</label>
@@ -81,7 +81,7 @@ function addServiceCard() {
         <div>
           <label class="block text-slate-400 mb-1">Tipo IP</label>
           <select name="tipo_ip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-            <option value="dinamica">DHCP</option>
+            <option value="dinamica">DHCP Dinámica</option>
             <option value="estatica">Estática</option>
             <option value="DHCP estatica">DHCP Estática</option>
           </select>
@@ -93,16 +93,16 @@ function addServiceCard() {
         </div>
 
         <div>
-          <label class="block text-slate-400 mb-1">Software</label>
-          <input type="text" name="software" placeholder="Ej. Docker" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          <label class="block text-slate-400 mb-1">Protocolo</label>
+          <input type="text" name="protocolo" placeholder="Ej. TCP, HTTP" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
       </div>
 
-      <!-- FILA 2: Protocolo, Puertos Rout, Puertos Dock, Docker Network -->
+      <!-- FILA 2: Software (Servicio), Puertos Rout, Puertos Dock, Docker Network -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div>
-          <label class="block text-slate-400 mb-1">Protocolo</label>
-          <input type="text" name="protocolo" placeholder="Ej. TCP, HTTP" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          <label class="block text-slate-400 mb-1">Software (Servicio)</label>
+          <input type="text" name="software" placeholder="Ej. Docker" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
 
         <div>
