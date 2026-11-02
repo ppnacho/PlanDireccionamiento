@@ -542,14 +542,34 @@ window.openBladeModal = function(device) {
   document.getElementById('modal-mac').textContent = device.mac || 'N/D';
   document.getElementById('modal-ubicacion').textContent = `${device.planta} / ${device.estancia || 'General'}`;
 
-  let modalHeaderHtml = '';
+  // 1. Corregir bloque "Dirección IP" para mostrar el Software / OS Base del hardware
+  const ipBoxEl = document.getElementById('modal-ip');
   if (device.software) {
-    modalHeaderHtml += `<span class="text-indigo-400 font-bold block mb-1">OS / Base: ${device.software}</span>`;
+    ipBoxEl.innerHTML = `<span class="text-indigo-300 font-mono text-xs break-all">${device.software}</span>`;
+  } else {
+    ipBoxEl.textContent = 'No especificado';
   }
-  document.getElementById('modal-ip').innerHTML = modalHeaderHtml || 'Dispositivo físico';
+
+  // 2. Cambiar "Enlace de red" (-) para que muestre el Hostname del dispositivo
+  const linkBoxEl = document.querySelector('.modal-enlace-red-label').nextElementSibling; // O el contenedor equivalente de red
+  // Si prefieres gestionarlo por id, asegúrate de poner un id="modal-enlace-red" en el HTML del modal:
+  const enlaceRedEl = document.getElementById('modal-enlace-red');
+  if (enlaceRedEl) {
+    enlaceRedEl.textContent = device.hostname ? `@${device.hostname}` : 'N/D';
+  }
 
   const extraSection = document.getElementById('modal-extra-section');
   let extraHtml = '';
+
+  // 3. Comentarios del hardware encima de los servicios asociados
+  if (device.comentarios) {
+    extraHtml += `
+      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+        <span class="text-slate-500 block text-[10px] uppercase">COMENTARIOS DEL HARDWARE</span>
+        <span class="text-amber-300/90 italic text-xs">${device.comentarios}</span>
+      </div>
+    `;
+  }
 
   const serviciosList = device.servicios_red || [];
 
@@ -557,10 +577,16 @@ window.openBladeModal = function(device) {
     extraHtml += `<div class="space-y-3"><span class="text-slate-400 block text-[11px] font-bold uppercase tracking-wider border-b border-slate-800 pb-1">Servicios Asociados (${serviciosList.length})</span>`;
 
     serviciosList.forEach((serv, idx) => {
-      const portsInfo = [
-        serv.puerto_rout_ext ? `Rout Ext: ${serv.puerto_rout_ext}➔${serv.puerto_rout_int || '?'}` : '',
-        serv.puerto_dock_int ? `Dock Int: ${serv.puerto_dock_int}` : ''
-      ].filter(Boolean).join(' | ');
+      // 4. Reestructurar puertos: Dock Ext ➔ Int al principio, seguido de Rout Ext ➔ Int en la misma línea
+      const dockPorts = (serv.puerto_dock_ext || serv.puerto_dock_int) 
+        ? `Dock: ${serv.puerto_dock_ext || '?'}➔${serv.puerto_dock_int || '?'}` 
+        : '';
+        
+      const routPorts = (serv.puerto_rout_ext || serv.puerto_rout_int) 
+        ? `Rout: ${serv.puerto_rout_ext || '?'}➔${serv.puerto_rout_int || '?'}` 
+        : '';
+
+      const combinedPorts = [dockPorts, routPorts].filter(Boolean).join(' | ');
 
       extraHtml += `
         <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
@@ -580,10 +606,10 @@ window.openBladeModal = function(device) {
 
           ${serv.software ? `<div class="text-[11px]"><span class="text-slate-500">Software:</span> <span class="text-indigo-300">${serv.software}</span></div>` : ''}
 
-          ${portsInfo || serv.dock_network ? `
-            <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-900">
-              ${portsInfo ? `<div>${portsInfo}</div>` : ''}
-              ${serv.dock_network ? `<div>Docker Net: <span class="text-indigo-400 font-bold">${serv.dock_network}</span></div>` : ''}
+          ${combinedPorts || serv.dock_network ? `
+            <div class="text-[11px] text-slate-400 pt-1 border-t border-slate-900 flex flex-wrap justify-between items-center gap-2">
+              ${combinedPorts ? `<span class="font-mono text-amber-200/90">${combinedPorts}</span>` : '<span></span>'}
+              ${serv.dock_network ? `<span class="text-indigo-400 font-bold">Net: ${serv.dock_network}</span>` : ''}
             </div>
           ` : ''}
 
@@ -597,19 +623,9 @@ window.openBladeModal = function(device) {
     extraHtml += `<div class="text-xs text-slate-500 italic p-3 text-center bg-slate-950 rounded-xl border border-slate-800">No hay servicios registrados para este dispositivo.</div>`;
   }
 
-  if (device.comentarios) {
-    extraHtml += `
-      <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
-        <span class="text-slate-500 block text-[10px] uppercase">COMENTARIOS DEL HARDWARE</span>
-        <span class="text-amber-300/90 italic text-xs">${device.comentarios}</span>
-      </div>
-    `;
-  }
-
   extraSection.innerHTML = extraHtml;
   document.getElementById('blade-modal').classList.remove('hidden');
 };
-
 window.closeModal = function() {
   document.getElementById('blade-modal').classList.add('hidden');
 };
