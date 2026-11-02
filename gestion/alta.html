@@ -1,82 +1,45 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NetControl | Alta de Dispositivo</title>
-  
-  <!-- Tailwind CSS & Icons -->
+  <title>NetControl - Alta de Dispositivo y Servicios</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <style>
-    .bg-network {
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.90) 100%),
-                  url('../assets/img/background_index.jpeg');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-    }
-    .glass-card {
-      background: rgba(30, 41, 59, 0.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-    }
-    .glass-nav {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    /* Ocultar flechas en inputs tipo número para los puertos */
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { 
-      -webkit-appearance: none; 
-      margin: 0; 
-    }
-    input[type=number] {
-      -moz-appearance: textfield;
-    }
-  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen bg-network antialiased flex flex-col overflow-x-hidden">
+<body class="bg-slate-950 text-slate-100 font-mono min-h-screen pb-12">
 
-  <!-- ==================== HEADER COMPACTO ==================== -->
-  <header class="glass-nav sticky top-0 z-50 px-4 py-2.5 flex items-center justify-between shadow-lg">
-    <div class="flex items-center gap-2.5">
-      <a href="gest_direcciones.html" class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 transition shadow-inner">
-        <i class="fa-solid fa-arrow-left text-xs"></i>
+  <!-- Navbar superior -->
+  <nav class="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <a href="representacion_3d.html" class="text-blue-400 hover:text-blue-300 transition text-sm flex items-center gap-2">
+        <i class="fa-solid fa-arrow-left"></i> Volver al 3D
       </a>
-      <div>
-        <h1 class="text-sm font-bold tracking-tight text-white leading-tight">NetControl</h1>
-        <span class="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Alta de Dispositivo</span>
-      </div>
+      <span class="text-slate-600">|</span>
+      <h1 class="font-bold text-slate-200 tracking-wider">NETCONTROL <span class="text-blue-500 text-xs">ALTA MULTI-SERVICIO</span></h1>
     </div>
-    <span class="hidden md:inline-block text-[11px] text-slate-300 font-mono bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-700">
-      <i class="fa-solid fa-user-shield text-blue-400 mr-1"></i> <span class="user-email-text">admin@redlocal.lan</span>
-    </span>
-  </header>
+    <div class="text-xs text-slate-400 user-email-text"></div>
+  </nav>
 
-  <!-- ==================== CONTENIDO PRINCIPAL COMPACTO ==================== -->
-  <main class="flex-1 w-full px-3 py-3 flex items-center justify-center">
-    <div class="glass-card rounded-xl p-4 sm:p-5 shadow-2xl w-full max-w-7xl">
-      <h2 class="text-sm font-bold text-white tracking-tight mb-3 pb-2 border-b border-slate-700/80 flex items-center justify-between">
-        <span class="flex items-center gap-2">
-          <i class="fa-solid fa-plus-circle text-blue-400"></i> Nuevo Registro en Inventario
-        </span>
-        <span class="text-[10px] text-slate-400 font-normal">Los campos con * son obligatorios</span>
-      </h2>
+  <main class="max-w-4xl mx-auto px-4 mt-8">
+    <form id="form-alta" class="space-y-8">
 
-      <form id="form-alta" class="space-y-3 text-xs">
+      <!-- TARJETA 1: DATOS FÍSICOS Y DE HARDWARE -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+        <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
+          <h2 class="text-base font-bold text-blue-400 flex items-center gap-2">
+            <i class="fa-solid fa-server"></i> 1. Información de Hardware y Ubicación
+          </h2>
+          <span class="text-[10px] bg-blue-950 text-blue-300 px-2.5 py-1 rounded-md border border-blue-900/50">Tabla: dispositivos_red</span>
+        </div>
 
-        <!-- FILA 1: Ubicación, Hostname, Conexión y Hardware -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2.5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Planta *</label>
-            <select id="planta" required class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs">
-              <option value="">Selecciona planta...</option>
+            <label class="block text-slate-400 mb-1">Planta *</label>
+            <select id="planta" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
               <option value="BAJA">BAJA</option>
               <option value="ESCALERA 1">ESCALERA 1</option>
               <option value="PRIMERA">PRIMERA</option>
@@ -86,130 +49,68 @@
           </div>
 
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Estancia *</label>
-            <select id="estancia" required class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs">
-              <option value="">Selecciona...</option>
-              <option value="Cocina">Cocina</option>
-              <option value="Aseo">Aseo</option>
-              <option value="Salon">Salon</option>
-              <option value="Hall">Hall</option>
-              <option value="Jardin">Jardin</option>
-              <option value="Entrada">Entrada</option>
-              <option value="Garaje">Garaje</option>
-              <option value="Tendedero">Tendedero</option>
-              <option value="HabPpal">HabPpal</option>
-              <option value="BañoPpal">BañoPpal</option>
-              <option value="HabDoble">HabDoble</option>
-              <option value="Baño">Baño</option>
-              <option value="HabIndividual">HabIndividual</option>
-              <option value="Buhardilla">Buhardilla</option>
-            </select>
+            <label class="block text-slate-400 mb-1">Estancia *</label>
+            <input type="text" id="estancia" required placeholder="Ej. SALON, COCINA, JARDIN" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 uppercase focus:outline-none focus:border-blue-500">
           </div>
 
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Hostname</label>
-            <input type="text" id="hostname" placeholder="Ej: wemos-salon" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
+            <label class="block text-slate-400 mb-1">Hostname (Único) *</label>
+            <input type="text" id="hostname" required placeholder="Ej. watchdog-sala" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
           </div>
 
           <div>
-            <label class="block font-medium text-slate-300 mb-1">Conexión *</label>
-            <select id="tipo_conexion" required class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs">
-              <option value="ETH">ETH</option>
-              <option value="WIFI">WIFI</option>
-            </select>
-          </div>
-
-          <div id="contenedor-ssid" class="hidden">
-            <label class="block font-medium text-slate-300 mb-1">SSID WiFi</label>
-            <input type="text" id="ssid" placeholder="Red WiFi" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
+            <label class="block text-slate-400 mb-1">MAC Address (Única) *</label>
+            <input type="text" id="mac" required placeholder="AA:BB:CC:DD:EE:FF" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 uppercase focus:outline-none focus:border-blue-500">
           </div>
 
           <div>
-            <label class="block font-medium text-slate-300 mb-1">ID Hardware *</label>
-            <input type="text" id="id_hw" required placeholder="Ej: ESP32-01" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
+            <label class="block text-slate-400 mb-1">ID Hardware / Modelo</label>
+            <input type="text" id="id_hw" placeholder="Ej. ESP8266 / Raspberry Pi 4" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
           </div>
 
           <div>
-            <label class="block font-medium text-slate-300 mb-1">MAC *</label>
-            <input type="text" id="mac" required placeholder="AA:BB:CC..." class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
+            <label class="block text-slate-400 mb-1">Software Base (Hardware)</label>
+            <input type="text" id="software_base" placeholder="Ej. Tasmota / ESPHome / Debian" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-slate-400 mb-1">Comentarios</label>
+            <textarea id="comentarios" rows="2" placeholder="Notas adicionales sobre el equipo físico..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
           </div>
         </div>
+      </div>
 
-        <!-- FILA 2: Red IP, Docker y Puertos -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 pt-1">
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Tipo IP *</label>
-            <select id="tipo_ip" required class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs">
-              <option value="DHCP">DHCP</option>
-              <option value="estatica">Estática</option>
-              <option value="DHCP estatica">Reserva</option>
-            </select>
-          </div>
-
-          <div id="contenedor-ip" class="hidden">
-            <label class="block font-medium text-slate-300 mb-1">Dirección IP *</label>
-            <input type="text" id="ip" placeholder="192.168.1.X" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Red Docker</label>
-            <input type="text" id="dock_network" placeholder="bridge" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-
-          <div>
-            <label class="block font-medium text-slate-400 mb-1">Rout. Ext</label>
-            <input type="number" id="puerto_rout_ext" placeholder="8080" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-
-          <div>
-            <label class="block font-medium text-slate-400 mb-1">Rout. Int</label>
-            <input type="number" id="puerto_rout_int" placeholder="80" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-
-          <div>
-            <label class="block font-medium text-slate-400 mb-1">Dock. Int</label>
-            <input type="number" id="puerto_dock_int" placeholder="3000" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-
-          <div>
-            <label class="block font-medium text-slate-400 mb-1">Dock. Ext</label>
-            <input type="number" id="puerto_dock_ext" placeholder="3000" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-        </div>
-
-        <!-- FILA 3: Servicios, Software y Comentarios -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-1">
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Servicios (comas)</label>
-            <input type="text" id="servicio" placeholder="Home Assistant, MQTT" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Tipo Servicios (comas)</label>
-            <input type="text" id="tipo_servicio" placeholder="Domótica, Broker" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Software (comas)</label>
-            <input type="text" id="software" placeholder="ESPHome, Tasmota" class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-          <div>
-            <label class="block font-medium text-slate-300 mb-1">Comentarios</label>
-            <input type="text" id="comentarios" placeholder="Notas adicionales..." class="w-full bg-slate-800/90 border border-slate-700 rounded-md px-2 py-1.5 text-slate-100 focus:outline-none focus:border-blue-500 text-xs placeholder-slate-500">
-          </div>
-        </div>
-
-        <!-- Botones de Acción -->
-        <div class="flex justify-end gap-3 pt-2.5 border-t border-slate-700/80">
-          <a href="gest_direcciones.html" class="px-4 py-1.5 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-700 transition font-medium text-xs">Cancelar</a>
-          <button type="submit" id="btn-guardar" class="px-5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white font-medium transition flex items-center gap-1.5 shadow-md shadow-blue-600/20 text-xs">
-            <i class="fa-solid fa-floppy-disk"></i> Guardar Dispositivo
+      <!-- SECCIÓN 2: SERVICIOS ASOCIADOS (DINÁMICA) -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-indigo-400 flex items-center gap-2">
+            <i class="fa-solid fa-network-wired"></i> 2. Servicios de Red y Software Asociados
+          </h2>
+          <button type="button" id="btn-add-service" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+            <i class="fa-solid fa-plus"></i> Añadir Servicio
           </button>
         </div>
 
-      </form>
-    </div>
+        <!-- Contenedor donde se inyectarán las cards de servicios -->
+        <div id="servicios-container" class="space-y-4">
+          <!-- Se inyecta al menos 1 por defecto desde el JS -->
+        </div>
+      </div>
+
+      <!-- BOTÓN GLOBAL DE GUARDADO -->
+      <div class="pt-4 flex justify-end gap-3">
+        <a href="representacion_3d.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-3 rounded-xl text-xs font-bold transition flex items-center">
+          Cancelar
+        </a>
+        <button type="submit" id="btn-submit" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xl shadow-blue-600/30">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar Dispositivo y Servicios
+        </button>
+      </div>
+
+    </form>
   </main>
 
-  <!-- Script principal del formulario -->
+  <!-- Script principal -->
   <script type="module" src="../assets/js/alta.js"></script>
 </body>
 </html>
