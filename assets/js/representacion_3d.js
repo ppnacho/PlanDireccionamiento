@@ -303,7 +303,7 @@ function buildDataCenterRoom(devices) {
 
   const rowsConfig = [
     {
-      z: 5.0, 
+      z: 10.0, 
       racksDef: [
         { name: 'BAJA', rackIndexInPlant: 0, totalPlantRacks: 3 },
         { name: 'BAJA', rackIndexInPlant: 1, totalPlantRacks: 3 },
@@ -311,7 +311,7 @@ function buildDataCenterRoom(devices) {
       ]
     },
     {
-      z: 0.0, 
+      z: 5.0, 
       racksDef: [
         { name: 'ESCALERA 1', rackIndexInPlant: 0, totalPlantRacks: 1 },
         { name: 'PRIMERA', rackIndexInPlant: 0, totalPlantRacks: 3 },
@@ -320,7 +320,7 @@ function buildDataCenterRoom(devices) {
       ]
     },
     {
-      z: -5.0, 
+      z: 0.0, 
       racksDef: [
         { name: 'ESCALERA 2', rackIndexInPlant: 0, totalPlantRacks: 1 },
         { name: 'BUHARDILLA', rackIndexInPlant: 0, totalPlantRacks: 3 },
