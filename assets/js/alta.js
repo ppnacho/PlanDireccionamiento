@@ -230,7 +230,7 @@ async function handleSubmit(e) {
     if (data && data.success === false) throw new Error(data.message || 'Error en el servidor.');
 
     alert('¡Dispositivo y servicios guardados con éxito!');
-    window.location.href = 'representacion_3d.html';
+    form.reset(); // Limpia todos los campos del formulario
 
   } catch (err) {
     console.error('Error al guardar:', err);
