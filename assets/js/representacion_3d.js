@@ -577,11 +577,11 @@ window.openBladeModal = function(device) {
     serviciosList.forEach((serv, idx) => {
       // 4. Puertos ordenados: Dock primero, seguido opcionalmente de Rout en la misma línea
       const dockPorts = (serv.puerto_dock_ext || serv.puerto_dock_int) 
-        ? `Dock: ${serv.puerto_dock_ext || '?'}➔${serv.puerto_dock_int || '?'}` 
+        ? `Port Docker: ${serv.puerto_dock_ext || '?'}➔${serv.puerto_dock_int || '?'}` 
         : '';
         
       const routPorts = (serv.puerto_rout_ext || serv.puerto_rout_int) 
-        ? `Rout: ${serv.puerto_rout_ext || '?'}➔${serv.puerto_rout_int || '?'}` 
+        ? `Port Router: ${serv.puerto_rout_ext || '?'}➔${serv.puerto_rout_int || '?'}` 
         : '';
 
       const combinedPorts = [dockPorts, routPorts].filter(Boolean).join(' | ');
