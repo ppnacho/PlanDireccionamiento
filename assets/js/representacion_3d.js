@@ -542,6 +542,15 @@ window.openBladeModal = function(device) {
   document.getElementById('modal-mac').textContent = device.mac || 'N/D';
   document.getElementById('modal-ubicacion').textContent = `${device.planta} / ${device.estancia || 'General'}`;
 
+  let modalHeaderActions = document.getElementById('modal-header-actions'); 
+  if (modalHeaderActions) {
+    modalHeaderActions.innerHTML = `
+      <a href="alta.html?id=${device.id}" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-lg">
+        <i class="fa-solid fa-pen-to-square"></i> Editar
+      </a>
+    `;
+  }
+
   // 1. Bloque Dirección IP (muestra el software / OS Base del equipo físico)
   const ipBoxEl = document.getElementById('modal-ip');
   if (device.software) {
