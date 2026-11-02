@@ -81,7 +81,7 @@ function addServiceCard() {
         <div>
           <label class="block text-slate-400 mb-1">Tipo IP</label>
           <select name="tipo_ip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
-            <option value="dinamica">DHCP Dinámica</option>
+            <option value="dinamica">DHCP</option>
             <option value="estatica">Estática</option>
             <option value="DHCP estatica">DHCP Estática</option>
           </select>
@@ -93,7 +93,7 @@ function addServiceCard() {
         </div>
 
         <div>
-          <label class="block text-slate-400 mb-1">Software (Servicio)</label>
+          <label class="block text-slate-400 mb-1">Software</label>
           <input type="text" name="software" placeholder="Ej. Docker" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
         </div>
       </div>
@@ -129,7 +129,7 @@ function addServiceCard() {
 
       <!-- FILA 3: Comentarios del Servicio (Ancho completo) -->
       <div>
-        <label class="block text-slate-400 mb-1">Comentarios del Servicio</label>
+        <label class="block text-slate-400 mb-1">Comentarios</label>
         <textarea name="comentarios" rows="2" placeholder="Notas específicas sobre este servicio..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
       </div>
 
