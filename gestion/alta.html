@@ -26,7 +26,7 @@
   <main class="max-w-4xl mx-auto px-4 mt-8">
     <form id="form-alta" class="space-y-8">
 
-      <!-- TARJETA 1: DATOS FÍSICOS Y DE HARDWARE (3 FILAS) -->
+      <!-- TARJETA 1: DATOS FÍSICOS Y DE HARDWARE -->
       <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
         <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
@@ -37,11 +37,10 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          
-          <!-- FILA 1: Planta, Estancia (Selector), Hostname -->
           <div>
             <label class="block text-slate-400 mb-1">Planta *</label>
             <select id="planta" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+              <option value="">Selecciona planta...</option>
               <option value="BAJA">BAJA</option>
               <option value="ESCALERA 1">ESCALERA 1</option>
               <option value="PRIMERA">PRIMERA</option>
@@ -53,6 +52,7 @@
           <div>
             <label class="block text-slate-400 mb-1">Estancia *</label>
             <select id="estancia" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
+              <option value="">Selecciona estancia...</option>
               <option value="Cocina">Cocina</option>
               <option value="Aseo">Aseo</option>
               <option value="Salon">Salon</option>
@@ -75,7 +75,6 @@
             <input type="text" id="hostname" required placeholder="Ej. watchdog-sala" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
           </div>
 
-          <!-- FILA 2: ID Hardware, MAC Address, Software Base -->
           <div>
             <label class="block text-slate-400 mb-1">ID Hardware / Modelo</label>
             <input type="text" id="id_hw" placeholder="Ej. ESP8266" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
@@ -91,12 +90,10 @@
             <input type="text" id="software_base" placeholder="Ej. Tasmota / Debian" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500">
           </div>
 
-          <!-- FILA 3: Comentarios (Ocupa todo el ancho) -->
           <div class="md:col-span-3">
             <label class="block text-slate-400 mb-1">Comentarios</label>
             <textarea id="comentarios" rows="2" placeholder="Notas adicionales sobre el equipo físico..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
           </div>
-
         </div>
       </div>
 
@@ -111,9 +108,8 @@
           </button>
         </div>
 
-        <!-- Contenedor donde se inyectarán las cards de servicios -->
         <div id="servicios-container" class="space-y-4">
-          <!-- Se inyecta al menos 1 por defecto desde el JS -->
+          <!-- Las cards se inyectarán aquí -->
         </div>
       </div>
 
@@ -129,6 +125,92 @@
 
     </form>
   </main>
+
+  <!-- PLANTILLA HTML PARA LAS CARDS DE SERVICIO (SEPARACIÓN DE RESPONSABILIDADES) -->
+  <template id="service-card-template">
+    <div class="service-card bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden transition-all">
+      <div class="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+        <span class="service-title text-xs font-bold text-indigo-300 flex items-center gap-2">
+          <i class="fa-solid fa-cubes"></i> Servicio #1
+        </span>
+        <button type="button" class="btn-remove-service text-red-400 hover:text-red-300 text-xs flex items-center gap-1 transition">
+          <i class="fa-solid fa-trash"></i> Eliminar
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <!-- FILA 1 -->
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+          <div>
+            <label class="block text-slate-400 mb-1">Servicio *</label>
+            <input type="text" name="servicio" required placeholder="Ej. Home Assistant" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Tipo Conexión</label>
+            <select name="tipo_conexion" class="tipo-conexion-select w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="">Selecciona...</option>
+              <option value="ETHERNET">ETHERNET</option>
+              <option value="WIFI">WIFI</option>
+            </select>
+          </div>
+          <div class="ssid-container hidden">
+            <label class="block text-slate-400 mb-1">SSID (Red Wifi)</label>
+            <input type="text" name="ssid" placeholder="Ej. HomeIoT" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Tipo IP</label>
+            <select name="tipo_ip" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="">Selecciona...</option>
+              <option value="dinamica">DHCP</option>
+              <option value="estatica">Estática</option>
+              <option value="DHCP estatica">DHCP Estática</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Dirección IP</label>
+            <input type="text" name="ip" placeholder="1.1.1.X" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Protocolo</label>
+            <input type="text" name="protocolo" placeholder="Ej. TCP, HTTP" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <!-- FILA 2 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-slate-400 mb-1">Software</label>
+            <input type="text" name="software" placeholder="Ej. Docker" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Puerto Rout Ext ➔ Int</label>
+            <div class="flex gap-1">
+              <input type="text" name="puerto_rout_ext" placeholder="Ext" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <input type="text" name="puerto_rout_int" placeholder="Int" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Puerto Dock Ext ➔ Int</label>
+            <div class="flex gap-1">
+              <input type="text" name="puerto_dock_ext" placeholder="Ext" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <input type="text" name="puerto_dock_int" placeholder="Int" class="w-1/2 bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-400 mb-1">Docker Network</label>
+            <input type="text" name="dock_network" placeholder="Ej. bridge, host" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <!-- FILA 3 -->
+        <div>
+          <label class="block text-slate-400 mb-1">Comentarios</label>
+          <textarea name="comentarios" rows="2" placeholder="Notas específicas sobre este servicio..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-indigo-500"></textarea>
+        </div>
+      </div>
+    </div>
+  </template>
 
   <!-- Script principal -->
   <script type="module" src="../assets/js/alta.js"></script>
