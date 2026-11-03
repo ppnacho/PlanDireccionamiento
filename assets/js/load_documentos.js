@@ -1,9 +1,8 @@
 /**
- * NetControl - Lógica de Gestión Documental por Dispositivo
+ * NetControl - Lógica de Gestión Documental por Dispositivo (100% vía Edge Function)
  */
 import { supabase } from './supabaseClient.js';
 
-let currentBucketName = null;
 let deviceId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -19,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  await inicializarBucketYDocumentacion(deviceId);
+  await loadBucketFiles();
 
   document.getElementById('form-upload').addEventListener('submit', handleFileUpload);
 });
@@ -41,58 +40,33 @@ function loadUserInfo() {
 }
 
 /**
- * Invoca a la Edge Function para asegurar la creación del bucket y obtener su nombre exacto
- */
-async function inicializarBucketYDocumentacion(id) {
-  try {
-    const { data, error } = await supabase.functions.invoke(`gestion-bucket?id=${id}`, {
-      method: 'GET'
-    });
-
-    if (error) throw new Error(error.message || 'Error de comunicación con el servidor.');
-    if (data && data.success === false) throw new Error(data.message || 'Error al preparar el almacenamiento.');
-
-    currentBucketName = data.bucketName;
-    document.getElementById('subtitle-device').textContent = `Host: @${data.hostname || 'Desconocido'}`;
-    document.getElementById('badge-bucket').textContent = `bucket: ${currentBucketName}`;
-
-    // Cargar los archivos existentes en el bucket
-    await loadBucketFiles();
-
-  } catch (err) {
-    console.error('Error al inicializar bucket:', err);
-    alert(`Error al inicializar almacenamiento: ${err.message}`);
-    window.location.href = 'representacion_3d.html';
-  }
-}
-
-/**
- * Lista los archivos del bucket y los organiza visualmente
+ * Lista los archivos invocando a la Edge Function
  */
 window.loadBucketFiles = async function() {
   const explorerEl = document.getElementById('file-explorer');
-  explorerEl.innerHTML = `<div class="text-center py-6 text-slate-500 italic"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Analizando repositorio...</div>`;
+  explorerEl.innerHTML = `<div class="text-center py-6 text-slate-500 italic"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Consultando repositorio seguro...</div>`;
 
   try {
-    // Listar objetos en la raíz del bucket (pasando '' para listar todo recursivamente o nivel superior)
-    const { data, error } = await supabase.storage
-      .from(currentBucketName)
-      .list('', {
-        limit: 200,
-        sortBy: { column: 'name', order: 'asc' }
-      });
+    const { data, error } = await supabase.functions.invoke(`gestion-bucket?id=${deviceId}&action=list`, {
+      method: 'GET'
+    });
 
-    if (error) throw error;
+    if (error) throw new Error(error.message || 'Error de comunicación.');
+    if (data && data.success === false) throw new Error(data.message);
 
-    if (!data || data.length === 0) {
-      explorerEl.innerHTML = `<div class="text-center py-8 text-slate-500 italic bg-slate-950/50 rounded-xl border border-slate-800">No hay documentos ni carpetas en este repositorio todavía.</div>`;
+    document.getElementById('subtitle-device').textContent = `Host: @${data.hostname || 'Desconocido'}`;
+    document.getElementById('badge-bucket').textContent = `bucket: ${data.bucketName}`;
+
+    const files = data.files || [];
+
+    if (files.length === 0) {
+      explorerEl.innerHTML = `<div class="text-center py-8 text-slate-500 italic bg-slate-950/50 rounded-xl border border-slate-800">No hay documentos en este repositorio.</div>`;
       return;
     }
 
     let html = `<div class="divide-y divide-slate-800/80 bg-slate-950/60 rounded-xl border border-slate-800 overflow-hidden">`;
 
-    data.forEach(item => {
-      // Si el item no tiene id, Supabase lo interpreta a veces como carpeta virtual o elemento especial
+    files.forEach(item => {
       const isFolder = item.id === null || !item.metadata;
       const itemName = item.name;
 
@@ -132,12 +106,12 @@ window.loadBucketFiles = async function() {
 
   } catch (err) {
     console.error('Error al listar archivos:', err);
-    explorerEl.innerHTML = `<div class="text-center py-6 text-red-400">Error al cargar el repositorio: ${err.message}</div>`;
+    explorerEl.innerHTML = `<div class="text-center py-6 text-red-400">Error: ${err.message}</div>`;
   }
 };
 
 /**
- * Maneja la subida de un archivo al bucket (con soporte para subcarpetas virtuales)
+ * Sube un archivo convirtiéndolo a Base64 y enviándolo a la Edge Function
  */
 async function handleFileUpload(e) {
   e.preventDefault();
@@ -148,20 +122,33 @@ async function handleFileUpload(e) {
   if (fileInput.files.length === 0) return;
 
   const file = fileInput.files[0];
-  const folder = folderInput.value.trim().replace(/^\/+|\/+$/g, ''); // Limpiar barras iniciales/finales
-  const filePath = folder ? `${folder}/${file.name}` : file.name;
+  const folder = folderInput.value.trim();
 
   btn.disabled = true;
   btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...`;
 
   try {
-    const { data, error } = await supabase.storage
-      .from(currentBucketName)
-      .upload(filePath, file, {
-        upsert: true // Sobrescribir si ya existe
-      });
+    // Convertir archivo a Base64 en el cliente
+    const base64Data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+      reader.readAsDataURL(file);
+    });
 
-    if (error) throw error;
+    const payload = {
+      fileName: file.name,
+      folder: folder,
+      fileBase64: base64Data,
+      contentType: file.type
+    };
+
+    const { data, error } = await supabase.functions.invoke(`gestion-bucket?id=${deviceId}&action=upload`, {
+      body: payload
+    });
+
+    if (error) throw new Error(error.message || 'Error de red.');
+    if (data && data.success === false) throw new Error(data.message);
 
     alert('¡Archivo subido con éxito!');
     fileInput.value = '';
@@ -178,17 +165,17 @@ async function handleFileUpload(e) {
 }
 
 /**
- * Genera una URL firmada temporal y descarga el archivo
+ * Pide una URL firmada a la Edge Function para descargar el archivo de forma segura
  */
 window.downloadFile = async function(path) {
   try {
-    const { data, error } = await supabase.storage
-      .from(currentBucketName)
-      .createSignedUrl(path, 60); // URL válida por 60 segundos
+    const { data, error } = await supabase.functions.invoke(`gestion-bucket?id=${deviceId}&action=download&path=${encodeURIComponent(path)}`, {
+      method: 'GET'
+    });
 
     if (error) throw error;
+    if (data && data.success === false) throw new Error(data.message);
 
-    // Abrir o descargar enlace firmado
     const link = document.createElement('a');
     link.href = data.signedUrl;
     link.download = path.split('/').pop();
@@ -198,20 +185,20 @@ window.downloadFile = async function(path) {
 
   } catch (err) {
     console.error('Error al descargar:', err);
-    alert(`No se pudo descargar el archivo: ${err.message}`);
+    alert(`No se pudo descargar: ${err.message}`);
   }
 };
 
 /**
- * Elimina un archivo del bucket
+ * Elimina un archivo invocando a la Edge Function
  */
 window.deleteFile = async function(path) {
-  if (!confirm(`¿Estás seguro de que deseas eliminar el archivo "${path}"?`)) return;
+  if (!confirm(`¿Estás seguro de que deseas eliminar "${path}"?`)) return;
 
   try {
-    const { error } = await supabase.storage
-      .from(currentBucketName)
-      .remove([path]);
+    const { error } = await supabase.functions.invoke(`gestion-bucket?id=${deviceId}&action=delete&path=${encodeURIComponent(path)}`, {
+      method: 'DELETE'
+    });
 
     if (error) throw error;
 
@@ -219,6 +206,6 @@ window.deleteFile = async function(path) {
 
   } catch (err) {
     console.error('Error al eliminar:', err);
-    alert(`Error al eliminar el archivo: ${err.message}`);
+    alert(`Error al eliminar: ${err.message}`);
   }
 };
