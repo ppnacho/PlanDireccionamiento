@@ -67,38 +67,26 @@ window.loadBucketFiles = async function() {
     let html = `<div class="divide-y divide-slate-800/80 bg-slate-950/60 rounded-xl border border-slate-800 overflow-hidden">`;
 
     files.forEach(item => {
-      const isFolder = item.id === null || !item.metadata;
-      const itemName = item.name;
-
-      if (isFolder) {
-        html += `
-          <div class="p-3 flex items-center justify-between hover:bg-slate-900/40 transition">
-            <span class="text-indigo-400 font-bold flex items-center gap-2">
-              <i class="fa-solid fa-folder text-indigo-500"></i> ${itemName}/
-            </span>
-            <span class="text-[10px] text-slate-500 uppercase">Carpeta</span>
+      const itemName = item.name; // Vendrá como "manuales/HP ProDesk 600 G2 DM.pdf"
+      const fileSize = item.metadata?.size ? (item.metadata.size / 1024).toFixed(1) + ' KB' : '';
+      
+      html += `
+        <div class="p-3 flex items-center justify-between hover:bg-slate-900/40 transition">
+          <div class="flex items-center gap-2.5 overflow-hidden">
+            <i class="fa-solid fa-file-lines text-indigo-400 shrink-0"></i>
+            <span class="text-slate-200 truncate font-mono">${itemName}</span>
+            ${fileSize ? `<span class="text-[10px] text-slate-500 shrink-0">(${fileSize})</span>` : ''}
           </div>
-        `;
-      } else {
-        const fileSize = item.metadata?.size ? (item.metadata.size / 1024).toFixed(1) + ' KB' : '';
-        html += `
-          <div class="p-3 flex items-center justify-between hover:bg-slate-900/40 transition">
-            <div class="flex items-center gap-2.5 overflow-hidden">
-              <i class="fa-solid fa-file-lines text-slate-400"></i>
-              <span class="text-slate-200 truncate">${itemName}</span>
-              ${fileSize ? `<span class="text-[10px] text-slate-500">(${fileSize})</span>` : ''}
-            </div>
-            <div class="flex items-center gap-2">
-              <button onclick="downloadFile('${itemName}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 transition text-[11px] border border-slate-700" title="Descargar">
-                <i class="fa-solid fa-download"></i>
-              </button>
-              <button onclick="deleteFile('${itemName}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-red-900/40 text-red-400 transition text-[11px] border border-slate-700" title="Eliminar">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="downloadFile('${itemName}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 transition text-[11px] border border-slate-700" title="Descargar">
+              <i class="fa-solid fa-download"></i>
+            </button>
+            <button onclick="deleteFile('${itemName}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-red-900/40 text-red-400 transition text-[11px] border border-slate-700" title="Eliminar">
+              <i class="fa-solid fa-trash"></i>
+            </button>
           </div>
-        `;
-      }
+        </div>
+      `;
     });
 
     html += `</div>`;
