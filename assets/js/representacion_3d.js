@@ -545,8 +545,11 @@ window.openBladeModal = function(device) {
   let modalFooterActions = document.getElementById('modal-footer-actions'); 
   if (modalFooterActions) {
     modalFooterActions.innerHTML = `
-      <a href="alta.html?id=${device.id}" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-colors border border-blue-500 shadow-lg">
-        <i class="fa-solid fa-pen-to-square"></i> Editar Dispositivo
+      <a href="alta.html?id=${device.id}" class="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-colors border border-blue-500 shadow-lg">
+        <i class="fa-solid fa-pen-to-square"></i> Editar
+      </a>
+      <a href="load_documentos.html?id=${device.id}" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-colors border border-indigo-500 shadow-lg">
+        <i class="fa-solid fa-folder-open"></i> Documentación
       </a>
     `;
   }
