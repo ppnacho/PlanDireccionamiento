@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function verifySession() {
   const isAuth = localStorage.getItem('netcontrol_auth');
-  if (!isAuth || !isAuth === 'true') {
-    // Mantén tu lógica de sesión actual
+  if (!isAuth || isAuth !== 'true') {
+    window.location.href = '../index.html';
   }
 }
 
@@ -22,10 +22,9 @@ function verifySession() {
  */
 window.loadNetworkTopology = async function() {
   const container = document.getElementById('network-container');
-  container.innerHTML = `<div class="absolute inset-0 flex items-center justify-center text-slate-500 font-mono text-xs italic bg-slate-950/80 z-10"><i class="fa-solid fa-spinner fa-spin mr-2 text-blue-400"></i> Generando topología de red...</div>`;
+  container.innerHTML = `<div class="absolute inset-0 flex items-center justify-center text-slate-400 font-mono text-xs italic bg-slate-950/80 z-20"><i class="fa-solid fa-spinner fa-spin mr-2 text-blue-400 text-base"></i> Generando topología de red...</div>`;
 
   try {
-    // Invocamos a la Edge Function 'obtener-dispositivos' existente
     const { data, error } = await supabase.functions.invoke('obtener-dispositivos', {
       method: 'GET'
     });
@@ -35,7 +34,6 @@ window.loadNetworkTopology = async function() {
 
     const dispositivos = data.devices || [];
 
-    // Construir nodos y aristas (nodes & edges) para Vis.js basados en la infraestructura fija
     const nodesArray = [];
     const edgesArray = [];
 
@@ -147,7 +145,7 @@ window.loadNetworkTopology = async function() {
     });
     edgesArray.push({ from: 'switch_garaje', to: 'ap_garaje', color: { color: '#6366f1' }, width: 2 });
 
-    // Inyectar dinámicamente los dispositivos registrados en la BBDD (repartidos por planta/red)
+    // Inyectar dispositivos registrados en la BBDD
     dispositivos.forEach(dev => {
       if (dev.hostname && !nodesArray.some(n => n.id === dev.id)) {
         nodesArray.push({
@@ -158,7 +156,6 @@ window.loadNetworkTopology = async function() {
           color: { background: '#10b981', border: '#34d399' },
           font: { color: '#cbd5e1', face: 'monospace', size: 10 }
         });
-        // Conectar al switch principal por defecto o según su planta si estuviera mapeado
         edgesArray.push({ from: 'switch_pb', to: dev.id, color: { color: '#1e293b' }, width: 1, dashes: true });
       }
     });
@@ -191,6 +188,6 @@ window.loadNetworkTopology = async function() {
 
   } catch (err) {
     console.error('Error al cargar la topología:', err);
-    container.innerHTML = `<div class="absolute inset-0 flex items-center justify-center text-red-400 font-mono text-xs bg-slate-950/90">Error al cargar el esquema: ${err.message}</div>`;
+    container.innerHTML = `<div class="absolute inset-0 flex items-center justify-center text-red-400 font-mono text-xs bg-slate-950/90 z-20">Error al cargar el esquema: ${err.message}</div>`;
   }
 };
