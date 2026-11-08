@@ -8,6 +8,10 @@ let allDevices = [];
 let scene, camera, renderer, controls;
 let rackMeshes = []; 
 let raycaster, mouse;
+// Variables de control para diferenciar gestos táctiles (arrastre de cámara vs toque en blade)
+let pointerDownX = 0;
+let pointerDownY = 0;
+const CLICK_THRESHOLD = 6; // píxeles de tolerancia
 
 // Diccionario maestro definitivo con los colores fijos y exclusivos para cada una de nuestras 14 estancias oficiales
 const ROOM_COLORS = {
@@ -138,7 +142,8 @@ function init3DEnvironment() {
 
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
-  renderer.domElement.addEventListener('click', onCanvasClick);
+  renderer.domElement.addEventListener('pointerdown', onPointerDown, false);
+  renderer.domElement.addEventListener('pointerup', onPointerUp, false);
   window.addEventListener('resize', onWindowResize);
 
   animate();
@@ -514,7 +519,23 @@ function updateLegendUI(estanciaColorMap) {
   legendEl.innerHTML = html;
 }
 
-function onCanvasClick(event) {
+/**
+ * Controladores puntero unificados para PC y Móvil
+ */
+function onPointerDown(event) {
+  pointerDownX = event.clientX;
+  pointerDownY = event.clientY;
+}
+
+function onPointerUp(event) {
+  const moveX = Math.abs(event.clientX - pointerDownX);
+  const moveY = Math.abs(event.clientY - pointerDownY);
+
+  // Si se movió más del umbral, se considera un arrastre de cámara, no un clic/toque
+  if (moveX > CLICK_THRESHOLD || moveY > CLICK_THRESHOLD) {
+    return;
+  }
+
   const container = document.getElementById('webgl-container');
   if (!container) return;
 
