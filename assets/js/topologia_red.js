@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function verifySession() {
   const isAuth = localStorage.getItem('netcontrol_auth');
-  if (isAuth !== 'true') {
+  if (!isAuth || isAuth !== 'true') {
     window.location.href = '../index.html';
   }
 }
