@@ -1,5 +1,6 @@
 /**
  * NetControl - Lógica de Visualización de Topología de Red con Vis.js
+ * Distribución base fija con escalado dinámico para dispositivos conectados.
  */
 import { supabase } from './supabaseClient.js';
 
@@ -12,13 +13,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function verifySession() {
   const isAuth = localStorage.getItem('netcontrol_auth');
-  if (!isAuth || isAuth !== 'true') {
+  if (!isAuth || !isAuth !== 'true') {
     window.location.href = '../index.html';
   }
 }
 
 /**
- * Consulta los dispositivos a través de la Edge Function 'obtener-dispositivos' y dibuja el grafo
+ * Carga la topología manteniendo el patrón maestro y escalando los dispositivos dinámicos
  */
 window.loadNetworkTopology = async function() {
   const container = document.getElementById('network-container');
@@ -37,127 +38,177 @@ window.loadNetworkTopology = async function() {
     const nodesArray = [];
     const edgesArray = [];
 
-    // 1. Nodo Internet (Cloud / WAN)
+    // ==========================================
+    // INFRAESTRUCTURA BASE FIJA (Patrón Maestro)
+    // ==========================================
+
+    // 1. Internet / WAN (Izquierda)
     nodesArray.push({
       id: 'internet',
       label: 'INTERNET\n(WAN)',
       shape: 'image',
       image: 'https://img.icons8.com/fluency/96/cloud.png',
-      size: 34,
+      size: 32,
+      x: -350, y: 150, fixed: { x: true, y: true },
       font: { color: '#38bdf8', face: 'monospace', size: 12, background: '#020617' }
     });
 
-    // 2. Router Principal (Router / Gateway)
+    // 2. Router Principal (Zona Salón / Centro-Bajo)
     nodesArray.push({
       id: 'router_internet',
-      label: 'Router Principal\n(Planta Baja)',
+      label: 'Router Principal',
       shape: 'image',
       image: 'https://img.icons8.com/fluency/96/router.png',
-      size: 32,
+      size: 30,
+      x: -120, y: 150, fixed: { x: true, y: true },
       font: { color: '#f8fafc', face: 'monospace', size: 11, background: '#020617' }
     });
     edgesArray.push({ from: 'internet', to: 'router_internet', color: { color: '#38bdf8' }, width: 3 });
 
-    // 3. Router Salón / Domo (Wireless Router)
+    // 3. Router Salón / Domo (A la derecha del router principal)
     nodesArray.push({
       id: 'router_salon',
       label: 'Router Salón\n(salon2.4, 5, devices)',
       shape: 'image',
       image: 'https://img.icons8.com/fluency/96/wi-fi-router.png',
-      size: 30,
+      size: 28,
+      x: 120, y: 150, fixed: { x: true, y: true },
       font: { color: '#818cf8', face: 'monospace', size: 11, background: '#020617' }
     });
-    edgesArray.push({ from: 'router_internet', to: 'router_salon', color: { color: '#6366f1' }, width: 2 });
+    edgesArray.push({ from: 'router_internet', to: 'router_salon', color: { color: '#6366f1' }, width: 2, label: 'Wi-Fi' });
 
-    // 4. Switch Principal 2.5GbE Planta Baja (Core Switch / Troncal)
+    // 4. Switch Planta Baja (Troncal 2.5GbE)
     nodesArray.push({
       id: 'switch_pb',
-      label: 'Switch 2.5GbE\n(Planta Baja)',
+      label: 'Switch Planta Baja',
       shape: 'image',
       image: 'https://img.icons8.com/fluency/96/network-switch.png',
-      size: 32,
+      size: 30,
+      x: -120, y: 30, fixed: { x: true, y: true },
       font: { color: '#2dd4bf', face: 'monospace', size: 11, background: '#020617' }
     });
-    edgesArray.push({ from: 'router_internet', to: 'switch_pb', color: { color: '#2dd4bf' }, width: 3, label: '2.5GbE' });
+    edgesArray.push({ from: 'router_internet', to: 'switch_pb', color: { color: '#2dd4bf' }, width: 2, label: '2.5GbE' });
 
-    // 5. Switch Planta Primera - Enlace 10GbE (Troncal)
+    // 5. Switch Planta Primera (Troncal 10GbE - Más ancho)
     nodesArray.push({
       id: 'switch_p1',
-      label: 'Switch 10GbE\n(Planta Primera)',
+      label: 'Switch Primera',
       shape: 'image',
       image: 'https://img.icons8.com/fluency/96/network-switch.png',
-      size: 32,
+      size: 30,
+      x: -120, y: -100, fixed: { x: true, y: true },
       font: { color: '#2dd4bf', face: 'monospace', size: 11, background: '#020617' }
     });
-    edgesArray.push({ from: 'switch_pb', to: 'switch_p1', color: { color: '#f59e0b' }, width: 4, label: '10GbE' });
+    edgesArray.push({ from: 'switch_pb', to: 'switch_p1', color: { color: '#f59e0b' }, width: 6, label: '10GbE Troncal' });
 
-    // 6. Switch Buhardilla - Enlace 10GbE (Troncal)
+    // 6. Switch Buhardilla (Troncal 10GbE - Más ancho)
     nodesArray.push({
       id: 'switch_buhar',
-      label: 'Switch 10GbE\n(Buhardilla)',
+      label: 'Switch Buhardilla',
       shape: 'image',
       image: 'https://img.icons8.com/fluency/96/network-switch.png',
-      size: 32,
+      size: 30,
+      x: -120, y: -240, fixed: { x: true, y: true },
       font: { color: '#2dd4bf', face: 'monospace', size: 11, background: '#020617' }
     });
-    edgesArray.push({ from: 'switch_p1', to: 'switch_buhar', color: { color: '#f59e0b' }, width: 4, label: '10GbE' });
+    edgesArray.push({ from: 'switch_p1', to: 'switch_buhar', color: { color: '#f59e0b' }, width: 6, label: '10GbE Troncal' });
 
-    // 7. Switch Secundario 8p Giga Buhardilla (Switch Final / Acceso)
+    // 7. Switch Secundario Buhardilla (Hacia la derecha en la buhardilla)
     nodesArray.push({
       id: 'switch_buhar_sec',
-      label: 'Switch 8p Giga\n(Buhardilla)',
+      label: 'Switch Secundario',
       shape: 'image',
       image: 'https://img.icons8.com/color/96/switch.png',
-      size: 28,
+      size: 26,
+      x: 120, y: -240, fixed: { x: true, y: true },
       font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
     });
-    edgesArray.push({ from: 'switch_buhar', to: 'switch_buhar_sec', color: { color: '#2dd4bf' }, width: 2 });
+    edgesArray.push({ from: 'switch_buhar', to: 'switch_buhar_sec', color: { color: '#2dd4bf' }, width: 2, label: '2.5GbE' });
 
-    // 8. AP Buhardilla (Access Point Puro)
+    // 8. AP Buhardilla (Extremo superior derecho)
     nodesArray.push({
       id: 'ap_buhar',
       label: 'AP Buhardilla\n(buhar2.4, buhar5)',
       shape: 'image',
       image: 'https://img.icons8.com/fluency/96/access-point.png',
-      size: 28,
+      size: 26,
+      x: 320, y: -240, fixed: { x: true, y: true },
       font: { color: '#818cf8', face: 'monospace', size: 10, background: '#020617' }
     });
-    edgesArray.push({ from: 'switch_buhar_sec', to: 'ap_buhar', color: { color: '#6366f1' }, width: 2 });
+    edgesArray.push({ from: 'switch_buhar_sec', to: 'ap_buhar', color: { color: '#6366f1' }, width: 2, label: 'Wi-Fi' });
 
-    // 9. Switch Garaje (Switch Final / Acceso)
+    // 9. Switch Garaje (Zona inferior)
     nodesArray.push({
       id: 'switch_garaje',
-      label: 'Switch 8p Giga\n(Garaje)',
+      label: 'Switch Garaje',
       shape: 'image',
       image: 'https://img.icons8.com/color/96/switch.png',
-      size: 28,
+      size: 26,
+      x: -120, y: 280, fixed: { x: true, y: true },
       font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
     });
     edgesArray.push({ from: 'router_internet', to: 'switch_garaje', color: { color: '#2dd4bf' }, width: 2 });
 
-    // 10. Router AP Garaje (Router AP)
+    // 10. Router AP Garaje (Extremo inferior izquierdo)
     nodesArray.push({
       id: 'ap_garaje',
       label: 'Router AP Garaje\n(devicesg)',
       shape: 'image',
       image: 'https://img.icons8.com/fluency/96/router.png',
-      size: 28,
+      size: 26,
+      x: -300, y: 280, fixed: { x: true, y: true },
       font: { color: '#818cf8', face: 'monospace', size: 10, background: '#020617' }
     });
-    edgesArray.push({ from: 'switch_garaje', to: 'ap_garaje', color: { color: '#6366f1' }, width: 2 });
+    edgesArray.push({ from: 'switch_garaje', to: 'ap_garaje', color: { color: '#6366f1' }, width: 2, label: 'Wi-Fi' });
 
-    // Inyectar dispositivos registrados en la BBDD
+
+    // ==========================================
+    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Escalables)
+    // ==========================================
     dispositivos.forEach(dev => {
       if (dev.hostname && !nodesArray.some(n => n.id === dev.id)) {
+        const servicios = dev.servicios_red || [];
+        const primaryServ = servicios[0] || {};
+        const isWifi = primaryServ.tipo_conexion === 'WIFI';
+        const ssid = primaryServ.ssid ? primaryServ.ssid.toLowerCase() : '';
+
+        // Enrutar al nodo de infraestructura correspondiente
+        let parentNodeId = 'switch_pb'; 
+
+        if (isWifi) {
+          if (ssid.includes('buhar')) {
+            parentNodeId = 'ap_buhar';
+          } else if (ssid.includes('devicesg') || ssid.includes('garaje')) {
+            parentNodeId = 'ap_garaje';
+          } else {
+            parentNodeId = 'router_salon'; 
+          }
+        } else {
+          const planta = (dev.planta || '').toUpperCase();
+          if (planta.includes('BUHAR')) parentNodeId = 'switch_buhar';
+          else if (planta.includes('PRIMERA')) parentNodeId = 'switch_p1';
+          else if (planta.includes('GARAJE')) parentNodeId = 'switch_garaje';
+        }
+
+        // Crear nodo dinámico (con icono wifi si es inalámbrico o punto verde si es cableado)
         nodesArray.push({
           id: dev.id,
-          label: `${dev.hostname}\n(${dev.ip || 'DHCP'})`,
-          shape: 'dot',
-          size: 10,
-          color: { background: '#10b981', border: '#34d399' },
-          font: { color: '#cbd5e1', face: 'monospace', size: 10 }
+          label: `${dev.hostname}\n(${primaryServ.ip || dev.ip || 'DHCP'})`,
+          shape: isWifi ? 'image' : 'dot',
+          image: isWifi ? 'https://img.icons8.com/fluency/48/wi-fi.png' : undefined,
+          size: isWifi ? 16 : 10,
+          color: isWifi ? undefined : { background: '#10b981', border: '#34d399' },
+          font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
         });
-        edgesArray.push({ from: 'switch_pb', to: dev.id, color: { color: '#1e293b' }, width: 1, dashes: true });
+
+        // Conexión al switch/AP correspondiente
+        edgesArray.push({
+          from: parentNodeId,
+          to: dev.id,
+          color: { color: isWifi ? '#6366f1' : '#334155' },
+          width: 1,
+          dashes: !isWifi
+        });
       }
     });
 
@@ -168,16 +219,16 @@ window.loadNetworkTopology = async function() {
     const options = {
       nodes: { borderWidth: 2, shadow: true },
       edges: {
-        font: { color: '#94a3b8', size: 10, align: 'middle', background: '#020617' },
+        font: { color: '#94a3b8', size: 9, align: 'middle', background: '#020617' },
         shadow: true,
         smooth: { type: 'cubicBezier', roundness: 0.2 }
       },
       physics: {
         barnesHut: {
-          gravitationalConstant: -3000,
-          centralGravity: 0.3,
-          springLength: 90,
-          springConstant: 0.04,
+          gravitationalConstant: -2500,
+          centralGravity: 0.05,
+          springLength: 80,
+          springConstant: 0.03,
           damping: 0.09
         }
       },
