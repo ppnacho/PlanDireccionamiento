@@ -72,37 +72,37 @@
 
   <!-- ==================== MODAL DE DIAGNÓSTICO (BURBUJA BLADE) ==================== -->
   <div id="blade-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md hidden p-4">
-    <div class="glass-nav rounded-2xl p-6 max-w-lg w-full border border-slate-700 shadow-2xl relative space-y-4">
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center">
+    <!-- Añadido max-h-[85vh] y overflow-y-auto para permitir scroll vertical en móviles -->
+    <div class="glass-nav rounded-2xl p-6 max-w-lg w-full border border-slate-700 shadow-2xl relative space-y-4 max-h-[85vh] overflow-y-auto">
+      <button onclick="closeModal()" class="sticky top-0 float-right z-10 text-slate-400 hover:text-white transition w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center">
         <i class="fa-solid fa-xmark text-sm"></i>
       </button>
 
-      <div class="flex items-center gap-3 pb-3 border-b border-slate-800">
-        <div class="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-400 border border-blue-500/30">
+      <div class="flex items-center gap-3 pb-3 border-b border-slate-800 clear-both">
+        <div class="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-400 border border-blue-500/30 shrink-0">
           <i class="fa-solid fa-server text-base"></i>
         </div>
-        <div>
-          <h3 id="modal-title" class="text-sm font-bold text-white font-mono tracking-wide">ID Hardware</h3>
-          <span id="modal-hostname" class="text-xs text-blue-400 font-mono mr-6">hostname</span>
-          <span id="modal-ip" class="text-emerald-400 font-bold text-sm">-</span>
+        <div class="overflow-hidden">
+          <h3 id="modal-title" class="text-sm font-bold text-white font-mono tracking-wide truncate">ID Hardware</h3>
+          <span id="modal-hostname" class="text-xs text-blue-400 font-mono block truncate">hostname</span>
+          <span id="modal-ip" class="text-emerald-400 font-bold text-sm block">-</span>
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-3 text-xs font-mono">
         <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/80">
           <span class="text-slate-500 block text-[10px] uppercase">DIRECCIÓN MAC</span>
-          <span id="modal-mac" class="text-slate-300">-</span>
+          <span id="modal-mac" class="text-slate-300 break-all">-</span>
         </div>
         <div class="bg-slate-950/90 p-3 rounded-xl border border-slate-800/80">
           <span class="text-slate-500 block text-[10px] uppercase">UBICACIÓN (RACK)</span>
-          <span id="modal-ubicacion" class="text-slate-300">-</span>
+          <span id="modal-ubicacion" class="text-slate-300 break-all">-</span>
         </div>
       </div>
 
       <div id="modal-extra-section" class="space-y-2.5 text-xs font-mono"></div>
 
       <div class="flex items-center pt-3 border-t border-slate-800">
-        <!-- El div interno con w-full y justify-between colocará uno a la izquierda y otro a la derecha -->
         <div id="modal-footer-actions" class="w-full flex items-center justify-between"></div>
       </div>
     </div>
