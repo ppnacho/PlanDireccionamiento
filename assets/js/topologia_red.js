@@ -37,45 +37,46 @@ window.loadNetworkTopology = async function() {
     const nodesArray = [];
     const edgesArray = [];
 
-    // 1. Nodo Raíz / Internet (Planta Baja)
+    // 1. Nodo Raíz / Internet (WAN)
     nodesArray.push({
       id: 'internet',
       label: 'INTERNET\n(WAN)',
-      shape: 'ellipse',
-      color: { background: '#0284c7', border: '#38bdf8', highlight: { background: '#0369a1', border: '#bae6fd' } },
-      font: { color: '#ffffff', face: 'monospace', size: 12 }
+      shape: 'image',
+      image: 'https://img.icons8.com/color/96/internet.png', // O una ruta local a tus iconos
+      size: 30,
+      font: { color: '#38bdf8', face: 'monospace', size: 12, background: '#020617' }
     });
 
-    // 2. Router Principal (Planta Baja - WiFi off)
+    // 2. Router Principal (Planta Baja - WAN)
     nodesArray.push({
       id: 'router_internet',
       label: 'Router Principal\n(Planta Baja)',
-      shape: 'box',
-      color: { background: '#1e293b', border: '#475569', highlight: { background: '#334155', border: '#64748b' } },
-      font: { color: '#f8fafc', face: 'monospace', size: 12 },
-      margin: 10
+      shape: 'image',
+      image: 'https://img.icons8.com/color/96/router.png',
+      size: 28,
+      font: { color: '#f8fafc', face: 'monospace', size: 11, background: '#020617' }
     });
     edgesArray.push({ from: 'internet', to: 'router_internet', color: { color: '#38bdf8' }, width: 3 });
 
-    // 3. Router Salón (WiFi: salon2.4, salon5, devices)
+    // 3. Router Salón (WiFi Multi-red)
     nodesArray.push({
       id: 'router_salon',
-      label: 'Router Salón\n(salon2.4, salon5, devices)',
-      shape: 'box',
-      color: { background: '#312e81', border: '#6366f1', highlight: { background: '#3730a3', border: '#818cf8' } },
-      font: { color: '#f8fafc', face: 'monospace', size: 11 },
-      margin: 10
+      label: 'Router Salón\n(salon2.4, 5, devices)',
+      shape: 'image',
+      image: 'https://img.icons8.com/color/96/wi-fi.png',
+      size: 26,
+      font: { color: '#818cf8', face: 'monospace', size: 11, background: '#020617' }
     });
     edgesArray.push({ from: 'router_internet', to: 'router_salon', color: { color: '#6366f1' }, width: 2 });
 
     // 4. Switch Principal 2.5GbE (Planta Baja)
     nodesArray.push({
       id: 'switch_pb',
-      label: 'Switch 10p 2.5GbE\n(Planta Baja)',
-      shape: 'box',
-      color: { background: '#0f766e', border: '#2dd4bf', highlight: { background: '#115e59', border: '#5eead4' } },
-      font: { color: '#f8fafc', face: 'monospace', size: 11 },
-      margin: 10
+      label: 'Switch 2.5GbE\n(Planta Baja)',
+      shape: 'image',
+      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/2dd4bf/switch.png',
+      size: 28,
+      font: { color: '#2dd4bf', face: 'monospace', size: 11, background: '#020617' }
     });
     edgesArray.push({ from: 'router_internet', to: 'switch_pb', color: { color: '#2dd4bf' }, width: 3, label: '2.5GbE' });
 
@@ -83,43 +84,43 @@ window.loadNetworkTopology = async function() {
     nodesArray.push({
       id: 'switch_p1',
       label: 'Switch 10GbE\n(Planta Primera)',
-      shape: 'box',
-      color: { background: '#0f766e', border: '#2dd4bf', highlight: { background: '#115e59', border: '#5eead4' } },
-      font: { color: '#f8fafc', face: 'monospace', size: 11 },
-      margin: 10
+      shape: 'image',
+      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/2dd4bf/switch.png',
+      size: 28,
+      font: { color: '#2dd4bf', face: 'monospace', size: 11, background: '#020617' }
     });
-    edgesArray.push({ from: 'switch_pb', to: 'switch_p1', color: { color: '#f59e0b' }, width: 4, label: '10GbE Troncal' });
+    edgesArray.push({ from: 'switch_pb', to: 'switch_p1', color: { color: '#f59e0b' }, width: 4, label: '10GbE' });
 
     // 6. Switch Buhardilla (10GbE Link)
     nodesArray.push({
       id: 'switch_buhar',
       label: 'Switch 10GbE\n(Buhardilla)',
-      shape: 'box',
-      color: { background: '#0f766e', border: '#2dd4bf', highlight: { background: '#115e59', border: '#5eead4' } },
-      font: { color: '#f8fafc', face: 'monospace', size: 11 },
-      margin: 10
+      shape: 'image',
+      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/2dd4bf/switch.png',
+      size: 28,
+      font: { color: '#2dd4bf', face: 'monospace', size: 11, background: '#020617' }
     });
-    edgesArray.push({ from: 'switch_p1', to: 'switch_buhar', color: { color: '#f59e0b' }, width: 4, label: '10GbE Troncal' });
+    edgesArray.push({ from: 'switch_p1', to: 'switch_buhar', color: { color: '#f59e0b' }, width: 4, label: '10GbE' });
 
     // 7. Switch Secundario 8p Gigabit (Buhardilla)
     nodesArray.push({
       id: 'switch_buhar_sec',
       label: 'Switch 8p Giga\n(Buhardilla)',
-      shape: 'box',
-      color: { background: '#1e293b', border: '#475569', highlight: { background: '#334155', border: '#64748b' } },
-      font: { color: '#f8fafc', face: 'monospace', size: 11 },
-      margin: 10
+      shape: 'image',
+      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/475569/switch.png',
+      size: 24,
+      font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
     });
-    edgesArray.push({ from: 'switch_buhar', to: 'switch_buhar_sec', color: { color: '#2dd4bf' }, width: 2, label: '2.5GbE' });
+    edgesArray.push({ from: 'switch_buhar', to: 'switch_buhar_sec', color: { color: '#2dd4bf' }, width: 2 });
 
     // 8. AP Buhardilla (buhar2.4, buhar5)
     nodesArray.push({
       id: 'ap_buhar',
       label: 'AP Buhardilla\n(buhar2.4, buhar5)',
-      shape: 'box',
-      color: { background: '#312e81', border: '#6366f1', highlight: { background: '#3730a3', border: '#818cf8' } },
-      font: { color: '#f8fafc', face: 'monospace', size: 11 },
-      margin: 10
+      shape: 'image',
+      image: 'https://img.icons8.com/color/96/access-point.png',
+      size: 24,
+      font: { color: '#818cf8', face: 'monospace', size: 10, background: '#020617' }
     });
     edgesArray.push({ from: 'switch_buhar_sec', to: 'ap_buhar', color: { color: '#6366f1' }, width: 2 });
 
@@ -127,10 +128,10 @@ window.loadNetworkTopology = async function() {
     nodesArray.push({
       id: 'switch_garaje',
       label: 'Switch 8p Giga\n(Garaje)',
-      shape: 'box',
-      color: { background: '#1e293b', border: '#475569', highlight: { background: '#334155', border: '#64748b' } },
-      font: { color: '#f8fafc', face: 'monospace', size: 11 },
-      margin: 10
+      shape: 'image',
+      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/475569/switch.png',
+      size: 24,
+      font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
     });
     edgesArray.push({ from: 'router_internet', to: 'switch_garaje', color: { color: '#2dd4bf' }, width: 2 });
 
@@ -138,10 +139,10 @@ window.loadNetworkTopology = async function() {
     nodesArray.push({
       id: 'ap_garaje',
       label: 'Router AP Garaje\n(devicesg)',
-      shape: 'box',
-      color: { background: '#312e81', border: '#6366f1', highlight: { background: '#3730a3', border: '#818cf8' } },
-      font: { color: '#f8fafc', face: 'monospace', size: 11 },
-      margin: 10
+      shape: 'image',
+      image: 'https://img.icons8.com/color/96/wi-fi.png',
+      size: 24,
+      font: { color: '#818cf8', face: 'monospace', size: 10, background: '#020617' }
     });
     edgesArray.push({ from: 'switch_garaje', to: 'ap_garaje', color: { color: '#6366f1' }, width: 2 });
 
