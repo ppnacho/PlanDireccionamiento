@@ -37,111 +37,111 @@ window.loadNetworkTopology = async function() {
     const nodesArray = [];
     const edgesArray = [];
 
-    // 1. Nodo Raíz / Internet (WAN)
+    // 1. Nodo Internet (Cloud / WAN)
     nodesArray.push({
       id: 'internet',
       label: 'INTERNET\n(WAN)',
       shape: 'image',
-      image: 'https://img.icons8.com/color/96/internet.png', // O una ruta local a tus iconos
-      size: 30,
+      image: 'https://img.icons8.com/fluency/96/cloud.png',
+      size: 34,
       font: { color: '#38bdf8', face: 'monospace', size: 12, background: '#020617' }
     });
 
-    // 2. Router Principal (Planta Baja - WAN)
+    // 2. Router Principal (Router / Gateway)
     nodesArray.push({
       id: 'router_internet',
       label: 'Router Principal\n(Planta Baja)',
       shape: 'image',
-      image: 'https://img.icons8.com/color/96/router.png',
-      size: 28,
+      image: 'https://img.icons8.com/fluency/96/router.png',
+      size: 32,
       font: { color: '#f8fafc', face: 'monospace', size: 11, background: '#020617' }
     });
     edgesArray.push({ from: 'internet', to: 'router_internet', color: { color: '#38bdf8' }, width: 3 });
 
-    // 3. Router Salón (WiFi Multi-red)
+    // 3. Router Salón / Domo (Wireless Router)
     nodesArray.push({
       id: 'router_salon',
       label: 'Router Salón\n(salon2.4, 5, devices)',
       shape: 'image',
-      image: 'https://img.icons8.com/color/96/wi-fi.png',
-      size: 26,
+      image: 'https://img.icons8.com/fluency/96/wi-fi-router.png',
+      size: 30,
       font: { color: '#818cf8', face: 'monospace', size: 11, background: '#020617' }
     });
     edgesArray.push({ from: 'router_internet', to: 'router_salon', color: { color: '#6366f1' }, width: 2 });
 
-    // 4. Switch Principal 2.5GbE (Planta Baja)
+    // 4. Switch Principal 2.5GbE Planta Baja (Core Switch / Troncal)
     nodesArray.push({
       id: 'switch_pb',
       label: 'Switch 2.5GbE\n(Planta Baja)',
       shape: 'image',
-      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/2dd4bf/switch.png',
-      size: 28,
+      image: 'https://img.icons8.com/fluency/96/network-switch.png',
+      size: 32,
       font: { color: '#2dd4bf', face: 'monospace', size: 11, background: '#020617' }
     });
     edgesArray.push({ from: 'router_internet', to: 'switch_pb', color: { color: '#2dd4bf' }, width: 3, label: '2.5GbE' });
 
-    // 5. Switch Planta Primera (10GbE Link)
+    // 5. Switch Planta Primera - Enlace 10GbE (Troncal)
     nodesArray.push({
       id: 'switch_p1',
       label: 'Switch 10GbE\n(Planta Primera)',
       shape: 'image',
-      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/2dd4bf/switch.png',
-      size: 28,
+      image: 'https://img.icons8.com/fluency/96/network-switch.png',
+      size: 32,
       font: { color: '#2dd4bf', face: 'monospace', size: 11, background: '#020617' }
     });
     edgesArray.push({ from: 'switch_pb', to: 'switch_p1', color: { color: '#f59e0b' }, width: 4, label: '10GbE' });
 
-    // 6. Switch Buhardilla (10GbE Link)
+    // 6. Switch Buhardilla - Enlace 10GbE (Troncal)
     nodesArray.push({
       id: 'switch_buhar',
       label: 'Switch 10GbE\n(Buhardilla)',
       shape: 'image',
-      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/2dd4bf/switch.png',
-      size: 28,
+      image: 'https://img.icons8.com/fluency/96/network-switch.png',
+      size: 32,
       font: { color: '#2dd4bf', face: 'monospace', size: 11, background: '#020617' }
     });
     edgesArray.push({ from: 'switch_p1', to: 'switch_buhar', color: { color: '#f59e0b' }, width: 4, label: '10GbE' });
 
-    // 7. Switch Secundario 8p Gigabit (Buhardilla)
+    // 7. Switch Secundario 8p Giga Buhardilla (Switch Final / Acceso)
     nodesArray.push({
       id: 'switch_buhar_sec',
       label: 'Switch 8p Giga\n(Buhardilla)',
       shape: 'image',
-      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/475569/switch.png',
-      size: 24,
+      image: 'https://img.icons8.com/color/96/switch.png',
+      size: 28,
       font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
     });
     edgesArray.push({ from: 'switch_buhar', to: 'switch_buhar_sec', color: { color: '#2dd4bf' }, width: 2 });
 
-    // 8. AP Buhardilla (buhar2.4, buhar5)
+    // 8. AP Buhardilla (Access Point Puro)
     nodesArray.push({
       id: 'ap_buhar',
       label: 'AP Buhardilla\n(buhar2.4, buhar5)',
       shape: 'image',
-      image: 'https://img.icons8.com/color/96/access-point.png',
-      size: 24,
+      image: 'https://img.icons8.com/fluency/96/access-point.png',
+      size: 28,
       font: { color: '#818cf8', face: 'monospace', size: 10, background: '#020617' }
     });
     edgesArray.push({ from: 'switch_buhar_sec', to: 'ap_buhar', color: { color: '#6366f1' }, width: 2 });
 
-    // 9. Switch Garaje (8p Gigabit)
+    // 9. Switch Garaje (Switch Final / Acceso)
     nodesArray.push({
       id: 'switch_garaje',
       label: 'Switch 8p Giga\n(Garaje)',
       shape: 'image',
-      image: 'https://img.icons8.com/external-flatart-icons-outline-flatarticons/64/475569/switch.png',
-      size: 24,
+      image: 'https://img.icons8.com/color/96/switch.png',
+      size: 28,
       font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
     });
     edgesArray.push({ from: 'router_internet', to: 'switch_garaje', color: { color: '#2dd4bf' }, width: 2 });
 
-    // 10. Router / AP Garaje (devicesg)
+    // 10. Router AP Garaje (Router AP)
     nodesArray.push({
       id: 'ap_garaje',
       label: 'Router AP Garaje\n(devicesg)',
       shape: 'image',
-      image: 'https://img.icons8.com/color/96/wi-fi.png',
-      size: 24,
+      image: 'https://img.icons8.com/fluency/96/router.png',
+      size: 28,
       font: { color: '#818cf8', face: 'monospace', size: 10, background: '#020617' }
     });
     edgesArray.push({ from: 'switch_garaje', to: 'ap_garaje', color: { color: '#6366f1' }, width: 2 });
