@@ -149,15 +149,24 @@ window.loadNetworkTopology = async function() {
     edgesArray.push({ from: 'switch_garaje', to: 'ap_garaje', color: { color: '#6366f1' }, width: 2 });
 
     // ==========================================
-    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Bus Horizontal y Wi-Fi en Órbita)
+    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Bus Ethernet Horizontal con Derivaciones)
     // ==========================================
-    
-    // Diccionario para registrar los nodos troncales de bus horizontal por cada zona
-    const busesHorizontales = {
-      'switch_pb': { x: -120, y: 30 },
-      'switch_p1': { x: -120, y: -100 },
-      'switch_buhar': { x: -120, y: -240 },
-      'switch_garaje': { x: -120, y: 280 }
+
+    // Definimos las coordenadas del segmento de Bus Horizontal para cada Switch troncal
+    // [xCentro, yBus, anchoExtremoIzquierda, anchoExtremoDerecha]
+    const busConfigs = {
+      'switch_pb':    { x: -120, y: 30,  left: -220, right: -20 },
+      'switch_p1':    { x: -120, y: -100, left: -220, right: -20 },
+      'switch_buhar': { x: -120, y: -240, left: -220, right: -20 },
+      'switch_garaje':{ x: -120, y: 280,  left: -220, right: -20 }
+    };
+
+    // Agruparemos los dispositivos cableados por su switch de planta
+    const cableadosPorSwitch = {
+      'switch_pb': [],
+      'switch_p1': [],
+      'switch_buhar': [],
+      'switch_garaje': []
     };
 
     dispositivos.forEach(dev => {
@@ -173,7 +182,7 @@ window.loadNetworkTopology = async function() {
         let parentNodeId = 'switch_pb'; 
 
         if (isWifi || isTasmota) {
-          // Dispositivos Inalámbricos / Tasmota (Agrupados alrededor de su SSID de forma invisible)
+          // --- INALÁMBRICOS / TASMOTA (En órbita invisible alrededor de su SSID) ---
           if (ssid.includes('buhar')) {
             parentNodeId = 'ap_buhar';
           } else if (ssid.includes('devicesg') || ssid.includes('garaje')) {
@@ -209,7 +218,7 @@ window.loadNetworkTopology = async function() {
             font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
           });
 
-          // Órbita invisible alrededor del emisor Wi-Fi
+          // Enlace invisible para mantenerlos agrupados alrededor del AP sin líneas
           edgesArray.push({
             from: parentNodeId,
             to: dev.id,
@@ -219,59 +228,99 @@ window.loadNetworkTopology = async function() {
           });
 
         } else {
-          // Dispositivos CABLEADOS: Distribución en Bus Horizontal
+          // --- CABLEADOS (Preparar para bus horizontal) ---
           const planta = (dev.planta || '').toUpperCase();
           if (planta.includes('BUHAR')) parentNodeId = 'switch_buhar';
           else if (planta.includes('PRIMERA')) parentNodeId = 'switch_p1';
           else if (planta.includes('GARAJE')) parentNodeId = 'switch_garaje';
           else if (planta.includes('BAJA')) parentNodeId = 'switch_pb';
 
-          // Creamos un nodo de bus auxiliar horizontal por dispositivo ligeramente desplazado en el eje X
-          const busNodeId = `bus_${dev.id}`;
-          const baseCoords = busesHorizontales[parentNodeId] || { x: -120, y: 0 };
-
-          // Nodo invisible en la línea horizontal del bus
-          nodesArray.push({
-            id: busNodeId,
-            label: undefined,
-            shape: 'dot',
-            size: 1,
-            color: { opacity: 0 },
-            fixed: { x: false, y: true }, // Fijo en vertical para mantener la línea horizontal, libre en horizontal
-            y: baseCoords.y - 35 // Línea horizontal colocada justo encima de cada switch
-          });
-
-          // Conectamos el switch principal a su nodo de bus horizontal
-          if (!edgesArray.some(e => e.from === parentNodeId && e.to === busNodeId)) {
-            edgesArray.push({
-              from: parentNodeId,
-              to: busNodeId,
-              color: { color: '#0284c7' },
-              width: 2,
-              dashes: false
-            });
+          if (!cableadosPorSwitch[parentNodeId]) {
+            cableadosPorSwitch[parentNodeId] = [];
           }
-
-          // Creamos el dispositivo cableado colgando del bus horizontal
-          nodesArray.push({
-            id: dev.id,
-            label: `${dev.hostname}\n(${primaryServ.ip || dev.ip || 'DHCP'})`,
-            shape: 'dot',
-            size: 10,
-            color: { background: '#0ea5e9', border: '#38bdf8' },
-            font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
-          });
-
-          // Conectamos el dispositivo a su punto en la barra horizontal del bus
-          edgesArray.push({
-            from: busNodeId,
-            to: dev.id,
-            color: { color: '#0284c7' },
-            width: 2,
-            dashes: false
-          });
+          cableadosPorSwitch[parentNodeId].push({ dev, primaryServ });
         }
       }
+    });
+
+    // Construcción formal del Bus Ethernet horizontal para cada planta
+    Object.keys(cableadosPorSwitch).forEach(switchId => {
+      const listaDevs = cableadosPorSwitch[switchId];
+      if (listaDevs.length === 0) return;
+
+      const cfg = busConfigs[switchId];
+
+      // Creamos los dos extremos del segmento de línea horizontal (Bus Principal)
+      const busIzqId = `bus_izq_${switchId}`;
+      const busDerId = `bus_der_${switchId}`;
+
+      nodesArray.push(
+        { id: busIzqId, label: undefined, shape: 'dot', size: 1, color: { opacity: 0 }, x: cfg.left, y: cfg.y, fixed: { x: true, y: true } },
+        { id: busDerId, label: undefined, shape: 'dot', size: 1, color: { opacity: 0 }, x: cfg.right, y: cfg.y, fixed: { x: true, y: true } }
+      );
+
+      // Línea horizontal gruesa del bus conectando ambos extremos
+      edgesArray.push({
+        from: busIzqId,
+        to: busDerId,
+        color: { color: '#0284c7' },
+        width: 4, // Troncal principal gruesa simulando el cable coaxial/bus
+        dashes: false
+      });
+
+      // Conectamos el switch de infraestructura a la línea de bus horizontal
+      edgesArray.push({
+        from: switchId,
+        to: busIzqId,
+        color: { color: '#0284c7' },
+        width: 2,
+        dashes: false
+      });
+
+      // Distribuimos los dispositivos uniformemente a lo largo del bus horizontal (alternando arriba y abajo)
+      const step = (cfg.right - cfg.left) / (listaDevs.length + 1);
+
+      listaDevs.forEach((item, index) => {
+        const devId = item.dev.id;
+        const posX = cfg.left + step * (index + 1);
+        // Alternamos: impares arriba (-65px), pares abajo (+65px) respecto al bus central
+        const posY = cfg.y + (index % 2 === 0 ? -65 : 65);
+
+        // Nodo del dispositivo cableado con posición fija en la derivada vertical
+        nodesArray.push({
+          id: devId,
+          label: `${item.dev.hostname}\n(${item.primaryServ.ip || item.dev.ip || 'DHCP'})`,
+          shape: 'dot',
+          size: 10,
+          color: { background: '#0ea5e9', border: '#38bdf8' },
+          x: posX,
+          y: posY,
+          fixed: { x: true, y: true },
+          font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
+        });
+
+        // Nodo de anclaje invisible sobre la línea horizontal del bus para trazar la bajada/subida vertical
+        const tapId = `tap_${devId}`;
+        nodesArray.push({
+          id: tapId,
+          label: undefined,
+          shape: 'dot',
+          size: 1,
+          color: { opacity: 0 },
+          x: posX,
+          y: cfg.y,
+          fixed: { x: true, y: true }
+        });
+
+        // Conexión vertical (derivación tipo "T" del bus al dispositivo)
+        edgesArray.push({
+          from: tapId,
+          to: devId,
+          color: { color: '#0284c7' },
+          width: 2,
+          dashes: false
+        });
+      });
     });
     
 
