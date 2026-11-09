@@ -149,11 +149,9 @@ window.loadNetworkTopology = async function() {
     edgesArray.push({ from: 'switch_garaje', to: 'ap_garaje', color: { color: '#6366f1' }, width: 2 });
 
     // ==========================================
-    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Bus Ethernet Horizontal con Derivaciones)
+    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Bus Horizontal y Hover en Etiquetas)
     // ==========================================
 
-    // Definimos las coordenadas del segmento de Bus Horizontal para cada Switch troncal
-    // [xCentro, yBus, anchoExtremoIzquierda, anchoExtremoDerecha]
     const busConfigs = {
       'switch_pb':    { x: -120, y: 30,  left: -220, right: -20 },
       'switch_p1':    { x: -120, y: -100, left: -220, right: -20 },
@@ -161,7 +159,6 @@ window.loadNetworkTopology = async function() {
       'switch_garaje':{ x: -120, y: 280,  left: -220, right: -20 }
     };
 
-    // Agruparemos los dispositivos cableados por su switch de planta
     const cableadosPorSwitch = {
       'switch_pb': [],
       'switch_p1': [],
@@ -180,9 +177,9 @@ window.loadNetworkTopology = async function() {
         const isTasmota = software.includes('tasmota');
 
         let parentNodeId = 'switch_pb'; 
+        const infoTexto = `${dev.hostname}\n(${primaryServ.ip || dev.ip || 'DHCP'})`;
 
         if (isWifi || isTasmota) {
-          // --- INALÁMBRICOS / TASMOTA (En órbita invisible alrededor de su SSID) ---
           if (ssid.includes('buhar')) {
             parentNodeId = 'ap_buhar';
           } else if (ssid.includes('devicesg') || ssid.includes('garaje')) {
@@ -210,15 +207,14 @@ window.loadNetworkTopology = async function() {
 
           nodesArray.push({
             id: dev.id,
-            label: `${dev.hostname}\n(${primaryServ.ip || dev.ip || 'DHCP'})`,
+            label: undefined, // Oculto por defecto
+            title: infoTexto,  // Se muestra al pasar el ratón (tooltip)
             shape: nodeShape,
             image: nodeImage,
             size: nodeSize,
-            color: nodeColor,
-            font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
+            color: nodeColor
           });
 
-          // Enlace invisible para mantenerlos agrupados alrededor del AP sin líneas
           edgesArray.push({
             from: parentNodeId,
             to: dev.id,
@@ -228,7 +224,6 @@ window.loadNetworkTopology = async function() {
           });
 
         } else {
-          // --- CABLEADOS (Preparar para bus horizontal) ---
           const planta = (dev.planta || '').toUpperCase();
           if (planta.includes('BUHAR')) parentNodeId = 'switch_buhar';
           else if (planta.includes('PRIMERA')) parentNodeId = 'switch_p1';
@@ -238,19 +233,17 @@ window.loadNetworkTopology = async function() {
           if (!cableadosPorSwitch[parentNodeId]) {
             cableadosPorSwitch[parentNodeId] = [];
           }
-          cableadosPorSwitch[parentNodeId].push({ dev, primaryServ });
+          cableadosPorSwitch[parentNodeId].push({ dev, primaryServ, infoTexto });
         }
       }
     });
 
-    // Construcción formal del Bus Ethernet horizontal para cada planta
+    // Construcción del Bus Ethernet horizontal con los dispositivos limpios
     Object.keys(cableadosPorSwitch).forEach(switchId => {
       const listaDevs = cableadosPorSwitch[switchId];
       if (listaDevs.length === 0) return;
 
       const cfg = busConfigs[switchId];
-
-      // Creamos los dos extremos del segmento de línea horizontal (Bus Principal)
       const busIzqId = `bus_izq_${switchId}`;
       const busDerId = `bus_der_${switchId}`;
 
@@ -259,16 +252,14 @@ window.loadNetworkTopology = async function() {
         { id: busDerId, label: undefined, shape: 'dot', size: 1, color: { opacity: 0 }, x: cfg.right, y: cfg.y, fixed: { x: true, y: true } }
       );
 
-      // Línea horizontal gruesa del bus conectando ambos extremos
       edgesArray.push({
         from: busIzqId,
         to: busDerId,
         color: { color: '#0284c7' },
-        width: 4, // Troncal principal gruesa simulando el cable coaxial/bus
+        width: 4,
         dashes: false
       });
 
-      // Conectamos el switch de infraestructura a la línea de bus horizontal
       edgesArray.push({
         from: switchId,
         to: busIzqId,
@@ -277,29 +268,26 @@ window.loadNetworkTopology = async function() {
         dashes: false
       });
 
-      // Distribuimos los dispositivos uniformemente a lo largo del bus horizontal (alternando arriba y abajo)
       const step = (cfg.right - cfg.left) / (listaDevs.length + 1);
 
       listaDevs.forEach((item, index) => {
         const devId = item.dev.id;
         const posX = cfg.left + step * (index + 1);
-        // Alternamos: impares arriba (-65px), pares abajo (+65px) respecto al bus central
         const posY = cfg.y + (index % 2 === 0 ? -65 : 65);
 
-        // Nodo del dispositivo cableado con posición fija en la derivada vertical
+        // Dispositivo cableado en el bus con etiqueta oculta y tooltip al pasar el ratón
         nodesArray.push({
           id: devId,
-          label: `${item.dev.hostname}\n(${item.primaryServ.ip || item.dev.ip || 'DHCP'})`,
+          label: undefined, // Oculto por defecto para mantener el esquema limpio
+          title: item.infoTexto, // Información emergente al pasar el cursor
           shape: 'dot',
           size: 10,
           color: { background: '#0ea5e9', border: '#38bdf8' },
           x: posX,
           y: posY,
-          fixed: { x: true, y: true },
-          font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
+          fixed: { x: true, y: true }
         });
 
-        // Nodo de anclaje invisible sobre la línea horizontal del bus para trazar la bajada/subida vertical
         const tapId = `tap_${devId}`;
         nodesArray.push({
           id: tapId,
@@ -312,7 +300,6 @@ window.loadNetworkTopology = async function() {
           fixed: { x: true, y: true }
         });
 
-        // Conexión vertical (derivación tipo "T" del bus al dispositivo)
         edgesArray.push({
           from: tapId,
           to: devId,
@@ -321,8 +308,7 @@ window.loadNetworkTopology = async function() {
           dashes: false
         });
       });
-    });
-    
+    });    
 
     const nodes = new vis.DataSet(nodesArray);
     const edges = new vis.DataSet(edgesArray);
