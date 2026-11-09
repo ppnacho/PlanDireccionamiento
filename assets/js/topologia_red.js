@@ -149,15 +149,14 @@ window.loadNetworkTopology = async function() {
     edgesArray.push({ from: 'switch_garaje', to: 'ap_garaje', color: { color: '#6366f1' }, width: 2 });
 
     // ==========================================
-    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Bus con direcciones alternas Izquierda / Derecha)
+    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Bus con direcciones personalizadas por planta)
     // ==========================================
 
-    // Configuramos la dirección y extensión del bus horizontal de cada planta/switch
     const busConfigs = {
-      'switch_pb':    { x: -120, y: 30,  left: -220, right: -20, dir: 'izq' },  // Hacia la izquierda
-      'switch_p1':    { x: -120, y: -100, left: -20,  right: 180, dir: 'der' },  // Hacia la derecha
-      'switch_buhar': { x: -120, y: -240, left: -220, right: -20, dir: 'izq' },  // Hacia la izquierda
-      'switch_garaje':{ x: -120, y: 280,  left: -20,  right: 180, dir: 'der' }   // Hacia la derecha
+      'switch_pb':    { x: -120, y: 30,  left: -260, right: -120 }, // Extendido hacia la IZQUIERDA
+      'switch_p1':    { x: -120, y: -100, left: -120, right: 60  }, // Extendido hacia la DERECHA
+      'switch_buhar': { x: -120, y: -240, left: -260, right: -120 }, // Extendido hacia la IZQUIERDA
+      'switch_garaje':{ x: -120, y: 280,  left: -120, right: 60  }  // Extendido hacia la DERECHA
     };
 
     const cableadosPorSwitch = {
@@ -183,7 +182,7 @@ window.loadNetworkTopology = async function() {
         if (isWifi || isTasmota) {
           if (ssid.includes('buhar')) {
             parentNodeId = 'ap_buhar';
-          } else if (ssid.includes('devicesg') || ssid.includes('garaje')) {
+          } else if (ssid.includes('devicesg' ) || ssid.includes('garaje')) {
             parentNodeId = 'ap_garaje';
           } else {
             parentNodeId = 'router_salon'; 
@@ -239,7 +238,7 @@ window.loadNetworkTopology = async function() {
       }
     });
 
-    // Construcción del Bus Ethernet con orientación personalizada por planta
+    // Construcción del Bus Ethernet con la dirección específica por planta
     Object.keys(cableadosPorSwitch).forEach(switchId => {
       const listaDevs = cableadosPorSwitch[switchId];
       if (listaDevs.length === 0) return;
@@ -262,11 +261,10 @@ window.loadNetworkTopology = async function() {
         dashes: false
       });
 
-      // Conexión del switch hacia el extremo correspondiente del bus según su dirección
-      const conexionSwitchTarget = cfg.dir === 'der' ? busDerId : busIzqId;
+      // Conectamos el switch principal al centro del bus de su planta
       edgesArray.push({
         from: switchId,
-        to: conexionSwitchTarget,
+        to: switchId === 'switch_p1' || switchId === 'switch_garaje' ? busIzqId : busDerId,
         color: { color: '#0284c7' },
         width: 2,
         dashes: false
@@ -311,7 +309,7 @@ window.loadNetworkTopology = async function() {
           dashes: false
         });
       });
-    });  
+    });
 
     const nodes = new vis.DataSet(nodesArray);
     const edges = new vis.DataSet(edgesArray);
