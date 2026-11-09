@@ -1,6 +1,6 @@
 /**
  * NetControl - Lógica de Visualización de Topología de Red con Vis.js
- * Infraestructura base fija y limpia (sin etiquetas en nodos ni enlaces).
+ * Infraestructura base fija y limpia + Icono tasmota (esp8266.png).
  */
 import { supabase } from './supabaseClient.js';
 
@@ -158,6 +158,9 @@ window.loadNetworkTopology = async function() {
         const primaryServ = servicios[0] || {};
         const isWifi = primaryServ.tipo_conexion === 'WIFI';
         const ssid = primaryServ.ssid ? primaryServ.ssid.toLowerCase() : '';
+        
+        const software = (dev.software || dev.firmware || dev.tipo || '').toLowerCase();
+        const isTasmota = software.includes('tasmota');
 
         let parentNodeId = 'switch_pb'; 
 
@@ -176,22 +179,39 @@ window.loadNetworkTopology = async function() {
           else if (planta.includes('GARAJE')) parentNodeId = 'switch_garaje';
         }
 
+        let nodeShape = 'dot';
+        let nodeImage = undefined;
+        let nodeSize = 10;
+        let nodeColor = { background: '#10b981', border: '#34d399' };
+
+        if (isTasmota) {
+          nodeShape = 'image';
+          nodeImage = '../assets/img/esp8266.png';
+          nodeSize = 18;
+          nodeColor = undefined;
+        } else if (isWifi) {
+          nodeShape = 'image';
+          nodeImage = 'https://img.icons8.com/fluency/48/wi-fi.png';
+          nodeSize = 16;
+          nodeColor = undefined;
+        }
+
         nodesArray.push({
           id: dev.id,
           label: `${dev.hostname}\n(${primaryServ.ip || dev.ip || 'DHCP'})`,
-          shape: isWifi ? 'image' : 'dot',
-          image: isWifi ? 'https://img.icons8.com/fluency/48/wi-fi.png' : undefined,
-          size: isWifi ? 16 : 10,
-          color: isWifi ? undefined : { background: '#10b981', border: '#34d399' },
+          shape: nodeShape,
+          image: nodeImage,
+          size: nodeSize,
+          color: nodeColor,
           font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
         });
 
         edgesArray.push({
           from: parentNodeId,
           to: dev.id,
-          color: { color: isWifi ? '#6366f1' : '#334155' },
+          color: { color: isWifi || isTasmota ? '#6366f1' : '#334155' },
           width: 1,
-          dashes: !isWifi
+          dashes: !isWifi && !isTasmota
         });
       }
     });
