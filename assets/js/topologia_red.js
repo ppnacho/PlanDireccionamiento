@@ -150,7 +150,7 @@ window.loadNetworkTopology = async function() {
 
 
     // ==========================================
-    // DISPOSITIVOS DINÁMICOS DE LA BBDD
+    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Agrupados por SSID sin líneas visibles)
     // ==========================================
     dispositivos.forEach(dev => {
       if (dev.hostname && !nodesArray.some(n => n.id === dev.id)) {
@@ -164,13 +164,13 @@ window.loadNetworkTopology = async function() {
 
         let parentNodeId = 'switch_pb'; 
 
-        if (isWifi) {
+        if (isWifi || isTasmota) {
           if (ssid.includes('buhar')) {
             parentNodeId = 'ap_buhar';
           } else if (ssid.includes('devicesg') || ssid.includes('garaje')) {
             parentNodeId = 'ap_garaje';
           } else {
-            parentNodeId = 'router_salon'; 
+            parentNodeId = 'router_salon'; // Por defecto al router del salón / domo
           }
         } else {
           const planta = (dev.planta || '').toUpperCase();
@@ -192,7 +192,7 @@ window.loadNetworkTopology = async function() {
         } else if (isWifi) {
           nodeShape = 'image';
           nodeImage = 'https://img.icons8.com/fluency/48/wi-fi.png';
-          nodeSize = 16;
+          nodeSize: 16;
           nodeColor = undefined;
         }
 
@@ -207,14 +207,24 @@ window.loadNetworkTopology = async function() {
           font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
         });
 
-        // SOLO creamos línea de enlace si el dispositivo NO es inalámbrico ni Tasmota
         if (!isWifi && !isTasmota) {
+          // Dispositivos cableados: línea discontinua visible hacia su switch
           edgesArray.push({
             from: parentNodeId,
             to: dev.id,
             color: { color: '#334155' },
             width: 1,
             dashes: true
+          });
+        } else {
+          // Dispositivos Wi-Fi y Tasmota: Enlace invisible físico para que la gravedad los agrupe
+          // alrededor de su AP/Router emisor sin pintar ninguna línea.
+          edgesArray.push({
+            from: parentNodeId,
+            to: dev.id,
+            color: { opacity: 0 }, // Completamente transparente
+            width: 0,
+            length: 90            // Distancia de órbita alrededor del nodo emisor
           });
         }
       }
