@@ -196,6 +196,7 @@ window.loadNetworkTopology = async function() {
           nodeColor = undefined;
         }
 
+        // Crear el nodo del dispositivo
         nodesArray.push({
           id: dev.id,
           label: `${dev.hostname}\n(${primaryServ.ip || dev.ip || 'DHCP'})`,
@@ -206,13 +207,16 @@ window.loadNetworkTopology = async function() {
           font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
         });
 
-        edgesArray.push({
-          from: parentNodeId,
-          to: dev.id,
-          color: { color: isWifi || isTasmota ? '#6366f1' : '#334155' },
-          width: 1,
-          dashes: !isWifi && !isTasmota
-        });
+        // SOLO creamos línea de enlace si el dispositivo NO es inalámbrico ni Tasmota
+        if (!isWifi && !isTasmota) {
+          edgesArray.push({
+            from: parentNodeId,
+            to: dev.id,
+            color: { color: '#334155' },
+            width: 1,
+            dashes: true
+          });
+        }
       }
     });
 
