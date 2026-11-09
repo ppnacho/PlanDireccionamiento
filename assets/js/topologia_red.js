@@ -1,6 +1,6 @@
 /**
  * NetControl - Lógica de Visualización de Topología de Red con Vis.js
- * Infraestructura base fija y limpia + Icono tasmota (esp8266.png).
+ * Infraestructura base fija, Wi-Fi agrupado invisible y cableado en formato Bus Ethernet.
  */
 import { supabase } from './supabaseClient.js';
 
@@ -150,8 +150,12 @@ window.loadNetworkTopology = async function() {
 
 
     // ==========================================
-    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Agrupados por SSID sin líneas visibles)
+    // DISPOSITIVOS DINÁMICOS DE LA BBDD
     // ==========================================
+    
+    // Agrupamos dispositivos cableados por su switch/planta de destino para crear nodos de bus virtuales
+    const cableadosPorSwitch = {};
+
     dispositivos.forEach(dev => {
       if (dev.hostname && !nodesArray.some(n => n.id === dev.id)) {
         const servicios = dev.servicios_red || [];
@@ -165,69 +169,95 @@ window.loadNetworkTopology = async function() {
         let parentNodeId = 'switch_pb'; 
 
         if (isWifi || isTasmota) {
+          // Inalámbricos / Tasmota (Agrupados por SSID de forma invisible)
           if (ssid.includes('buhar')) {
             parentNodeId = 'ap_buhar';
           } else if (ssid.includes('devicesg') || ssid.includes('garaje')) {
             parentNodeId = 'ap_garaje';
           } else {
-            parentNodeId = 'router_salon'; // Por defecto al router del salón / domo
+            parentNodeId = 'router_salon'; 
           }
+
+          let nodeShape = 'dot';
+          let nodeImage = undefined;
+          let nodeSize = 10;
+          let nodeColor = { background: '#10b981', border: '#34d399' };
+
+          if (isTasmota) {
+            nodeShape = 'image';
+            nodeImage = '../assets/img/esp8266.png';
+            nodeSize = 18;
+            nodeColor = undefined;
+          } else if (isWifi) {
+            nodeShape = 'image';
+            nodeImage = 'https://img.icons8.com/fluency/48/wi-fi.png';
+            nodeSize = 16;
+            nodeColor = undefined;
+          }
+
+          nodesArray.push({
+            id: dev.id,
+            label: `${dev.hostname}\n(${primaryServ.ip || dev.ip || 'DHCP'})`,
+            shape: nodeShape,
+            image: nodeImage,
+            size: nodeSize,
+            color: nodeColor,
+            font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
+          });
+
+          // Enlace invisible para mantenerlos alrededor de su emisor SSID sin líneas
+          edgesArray.push({
+            from: parentNodeId,
+            to: dev.id,
+            color: { opacity: 0 },
+            width: 0,
+            length: 90
+          });
+
         } else {
+          // Dispositivos CABLEADOS: Distribución en Bus Ethernet
           const planta = (dev.planta || '').toUpperCase();
           if (planta.includes('BUHAR')) parentNodeId = 'switch_buhar';
           else if (planta.includes('PRIMERA')) parentNodeId = 'switch_p1';
           else if (planta.includes('GARAJE')) parentNodeId = 'switch_garaje';
+          else if (planta.includes('BAJA')) parentNodeId = 'switch_pb';
+
+          if (!cableadosPorSwitch[parentNodeId]) {
+            cableadosPorSwitch[parentNodeId] = [];
+          }
+          cableadosPorSwitch[parentNodeId].push({ dev, primaryServ });
         }
+      }
+    });
 
-        let nodeShape = 'dot';
-        let nodeImage = undefined;
-        let nodeSize = 10;
-        let nodeColor = { background: '#10b981', border: '#34d399' };
+    // Construcción de la estructura de Bus para los cableados
+    Object.keys(cableadosPorSwitch).forEach(switchId => {
+      const listaDevs = cableadosPorSwitch[switchId];
+      let ultimoNodoEnBus = switchId;
 
-        if (isTasmota) {
-          nodeShape = 'image';
-          nodeImage = '../assets/img/esp8266.png';
-          nodeSize = 18;
-          nodeColor = undefined;
-        } else if (isWifi) {
-          nodeShape = 'image';
-          nodeImage = 'https://img.icons8.com/fluency/48/wi-fi.png';
-          nodeSize: 16;
-          nodeColor = undefined;
-        }
+      listaDevs.forEach((item, index) => {
+        const devId = item.dev.id;
 
-        // Crear el nodo del dispositivo
         nodesArray.push({
-          id: dev.id,
-          label: `${dev.hostname}\n(${primaryServ.ip || dev.ip || 'DHCP'})`,
-          shape: nodeShape,
-          image: nodeImage,
-          size: nodeSize,
-          color: nodeColor,
+          id: devId,
+          label: `${item.dev.hostname}\n(${item.primaryServ.ip || item.dev.ip || 'DHCP'})`,
+          shape: 'dot',
+          size: 10,
+          color: { background: '#0ea5e9', border: '#38bdf8' },
           font: { color: '#cbd5e1', face: 'monospace', size: 10, background: '#020617' }
         });
 
-        if (!isWifi && !isTasmota) {
-          // Dispositivos cableados: línea discontinua visible hacia su switch
-          edgesArray.push({
-            from: parentNodeId,
-            to: dev.id,
-            color: { color: '#334155' },
-            width: 1,
-            dashes: true
-          });
-        } else {
-          // Dispositivos Wi-Fi y Tasmota: Enlace invisible físico para que la gravedad los agrupe
-          // alrededor de su AP/Router emisor sin pintar ninguna línea.
-          edgesArray.push({
-            from: parentNodeId,
-            to: dev.id,
-            color: { opacity: 0 }, // Completamente transparente
-            width: 0,
-            length: 90            // Distancia de órbita alrededor del nodo emisor
-          });
-        }
-      }
+        // El primer dispositivo se conecta al switch; los siguientes forman la línea de bus encadenada
+        edgesArray.push({
+          from: ultimoNodoEnBus,
+          to: devId,
+          color: { color: '#0284c7' },
+          width: 2,
+          dashes: false // Línea continua firme simulando el bus troncal Ethernet
+        });
+
+        ultimoNodoEnBus = devId; // El siguiente se conecta al actual formando la cadena de bus
+      });
     });
 
     const nodes = new vis.DataSet(nodesArray);
