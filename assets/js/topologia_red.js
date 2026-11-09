@@ -149,14 +149,15 @@ window.loadNetworkTopology = async function() {
     edgesArray.push({ from: 'switch_garaje', to: 'ap_garaje', color: { color: '#6366f1' }, width: 2 });
 
     // ==========================================
-    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Bus Horizontal y Hover en Etiquetas)
+    // DISPOSITIVOS DINÁMICOS DE LA BBDD (Bus con direcciones alternas Izquierda / Derecha)
     // ==========================================
 
+    // Configuramos la dirección y extensión del bus horizontal de cada planta/switch
     const busConfigs = {
-      'switch_pb':    { x: -120, y: 30,  left: -220, right: -20 },
-      'switch_p1':    { x: -120, y: -100, left: -220, right: -20 },
-      'switch_buhar': { x: -120, y: -240, left: -220, right: -20 },
-      'switch_garaje':{ x: -120, y: 280,  left: -220, right: -20 }
+      'switch_pb':    { x: -120, y: 30,  left: -220, right: -20, dir: 'izq' },  // Hacia la izquierda
+      'switch_p1':    { x: -120, y: -100, left: -20,  right: 180, dir: 'der' },  // Hacia la derecha
+      'switch_buhar': { x: -120, y: -240, left: -220, right: -20, dir: 'izq' },  // Hacia la izquierda
+      'switch_garaje':{ x: -120, y: 280,  left: -20,  right: 180, dir: 'der' }   // Hacia la derecha
     };
 
     const cableadosPorSwitch = {
@@ -207,8 +208,8 @@ window.loadNetworkTopology = async function() {
 
           nodesArray.push({
             id: dev.id,
-            label: undefined, // Oculto por defecto
-            title: infoTexto,  // Se muestra al pasar el ratón (tooltip)
+            label: undefined,
+            title: infoTexto,
             shape: nodeShape,
             image: nodeImage,
             size: nodeSize,
@@ -238,7 +239,7 @@ window.loadNetworkTopology = async function() {
       }
     });
 
-    // Construcción del Bus Ethernet horizontal con los dispositivos limpios
+    // Construcción del Bus Ethernet con orientación personalizada por planta
     Object.keys(cableadosPorSwitch).forEach(switchId => {
       const listaDevs = cableadosPorSwitch[switchId];
       if (listaDevs.length === 0) return;
@@ -252,6 +253,7 @@ window.loadNetworkTopology = async function() {
         { id: busDerId, label: undefined, shape: 'dot', size: 1, color: { opacity: 0 }, x: cfg.right, y: cfg.y, fixed: { x: true, y: true } }
       );
 
+      // Línea troncal horizontal del bus
       edgesArray.push({
         from: busIzqId,
         to: busDerId,
@@ -260,9 +262,11 @@ window.loadNetworkTopology = async function() {
         dashes: false
       });
 
+      // Conexión del switch hacia el extremo correspondiente del bus según su dirección
+      const conexionSwitchTarget = cfg.dir === 'der' ? busDerId : busIzqId;
       edgesArray.push({
         from: switchId,
-        to: busIzqId,
+        to: conexionSwitchTarget,
         color: { color: '#0284c7' },
         width: 2,
         dashes: false
@@ -275,11 +279,10 @@ window.loadNetworkTopology = async function() {
         const posX = cfg.left + step * (index + 1);
         const posY = cfg.y + (index % 2 === 0 ? -65 : 65);
 
-        // Dispositivo cableado en el bus con etiqueta oculta y tooltip al pasar el ratón
         nodesArray.push({
           id: devId,
-          label: undefined, // Oculto por defecto para mantener el esquema limpio
-          title: item.infoTexto, // Información emergente al pasar el cursor
+          label: undefined,
+          title: item.infoTexto,
           shape: 'dot',
           size: 10,
           color: { background: '#0ea5e9', border: '#38bdf8' },
@@ -308,7 +311,7 @@ window.loadNetworkTopology = async function() {
           dashes: false
         });
       });
-    });    
+    });  
 
     const nodes = new vis.DataSet(nodesArray);
     const edges = new vis.DataSet(edgesArray);
